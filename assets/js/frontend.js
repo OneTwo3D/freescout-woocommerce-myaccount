@@ -97,6 +97,7 @@
 
 	// -------------------------------------------------------------------------
 	// New ticket form
+	// Uses FormData so that file attachments are included in the submission.
 	// -------------------------------------------------------------------------
 	$( document ).on( 'submit', '#fswa-new-ticket-form', function ( e ) {
 		e.preventDefault();
@@ -112,10 +113,12 @@
 		$submit.prop( 'disabled', true ).text( fswa.i18n.sending );
 
 		$.ajax( {
-			url     : fswa.ajaxUrl,
-			type    : 'POST',
-			data    : $form.serialize(),
-			dataType: 'json',
+			url         : fswa.ajaxUrl,
+			type        : 'POST',
+			data        : new FormData( this ),
+			dataType    : 'json',
+			processData : false, // tell jQuery not to serialize the FormData object
+			contentType : false, // let the browser set the multipart boundary
 		} ).done( function ( response ) {
 			if ( response.success ) {
 				$ok.text( response.data.message ).show();

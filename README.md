@@ -281,6 +281,10 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 
 ## Changelog
 
+### 1.1.21
+- **New:** File attachments on ticket submission forms. Both the My Account form (logged-in) and the `[fswa_new_ticket_form]` shortcode form accept PDF, JPG, PNG, GIF, WebP, and TXT files. Up to 5 files, 10 MB each. Files are sent to FreeScout as base64-encoded thread attachments.
+- **New:** Cloudflare Turnstile captcha on the public `[fswa_new_ticket_form]` shortcode form. Configure your Site Key and Secret Key under **WooCommerce → FreeScout → Spam Protection**. The captcha is skipped for logged-in users submitting via My Account. Leave the keys blank to disable.
+
 ### 1.1.19
 - **Fix:** KB articles were not loading for some categories because the FreeScout Docs module can return articles under the key `docs` rather than `articles`. All article extraction points now check both keys.
 - **Fix:** KB live-search AJAX handler was calling a non-existent `get_kb_articles()` API method, causing a PHP fatal error on every autocomplete request. Now correctly uses `search_kb()`.

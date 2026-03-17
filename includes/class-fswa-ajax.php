@@ -93,6 +93,32 @@ class FSWA_Ajax {
 			wp_send_json_error( [ 'message' => __( 'Creating new tickets is not available.', 'fswa' ) ], 403 );
 		}
 
+		// ------------------------------------------------------------------ //
+		// Turnstile captcha – only enforced for guests when a secret key is set.
+		// ------------------------------------------------------------------ //
+		if ( ! is_user_logged_in() ) {
+			$ts_secret = get_option( 'fswa_turnstile_secret_key', '' );
+			if ( '' !== $ts_secret ) {
+				$ts_token = sanitize_text_field( wp_unslash( $_POST['cf-turnstile-response'] ?? '' ) );
+				if ( '' === $ts_token ) {
+					wp_send_json_error( [ 'message' => __( 'Please complete the security check.', 'fswa' ) ], 400 );
+				}
+				$ts_verify = wp_remote_post( 'https://challenges.cloudflare.com/turnstile/v0/siteverify', [
+					'body' => [
+						'secret'   => $ts_secret,
+						'response' => $ts_token,
+					],
+				] );
+				if ( is_wp_error( $ts_verify ) ) {
+					wp_send_json_error( [ 'message' => __( 'Could not verify security check. Please try again.', 'fswa' ) ], 503 );
+				}
+				$ts_result = json_decode( wp_remote_retrieve_body( $ts_verify ), true );
+				if ( empty( $ts_result['success'] ) ) {
+					wp_send_json_error( [ 'message' => __( 'Security check failed. Please refresh the page and try again.', 'fswa' ) ], 400 );
+				}
+			}
+		}
+
 		$subject    = sanitize_text_field( wp_unslash( $_POST['subject'] ?? '' ) );
 		$body       = wp_unslash( $_POST['body'] ?? '' );
 		$mailbox_id = (int) ( $_POST['mailbox_id'] ?? get_option( 'fswa_default_mailbox_id', 0 ) );
@@ -114,6 +140,56 @@ class FSWA_Ajax {
 			wp_send_json_error( [ 'message' => __( 'Support is not available at the moment.', 'fswa' ) ], 503 );
 		}
 
+		// ------------------------------------------------------------------ //
+		// File attachments
+		// ------------------------------------------------------------------ //
+		$attachments      = [];
+		$allowed_mimes    = [
+			'application/pdf',
+			'image/jpeg',
+			'image/png',
+			'image/gif',
+			'image/webp',
+			'text/plain',
+		];
+		$max_file_bytes   = 10 * 1024 * 1024; // 10 MB per file
+		$max_files        = 5;
+
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		$uploaded_files = $_FILES['attachments'] ?? [];
+		if ( ! empty( $uploaded_files['name'][0] ) ) {
+			$file_count = min( count( $uploaded_files['name'] ), $max_files );
+			for ( $i = 0; $i < $file_count; $i++ ) {
+				if ( (int) $uploaded_files['error'][ $i ] !== UPLOAD_ERR_OK ) {
+					continue;
+				}
+				if ( (int) $uploaded_files['size'][ $i ] > $max_file_bytes ) {
+					wp_send_json_error( [
+						/* translators: %s: file name */
+						'message' => sprintf( __( 'File "%s" exceeds the 10 MB size limit.', 'fswa' ), sanitize_file_name( $uploaded_files['name'][ $i ] ) ),
+					], 400 );
+				}
+				$tmp_path = $uploaded_files['tmp_name'][ $i ];
+				if ( ! is_uploaded_file( $tmp_path ) ) {
+					continue;
+				}
+				$mime = mime_content_type( $tmp_path );
+				if ( ! in_array( $mime, $allowed_mimes, true ) ) {
+					wp_send_json_error( [
+						/* translators: %s: file name */
+						'message' => sprintf( __( 'File "%s" is not an allowed type (PDF, image, or TXT).', 'fswa' ), sanitize_file_name( $uploaded_files['name'][ $i ] ) ),
+					], 400 );
+				}
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+				$data = base64_encode( file_get_contents( $tmp_path ) );
+				$attachments[] = [
+					'fileName' => sanitize_file_name( $uploaded_files['name'][ $i ] ),
+					'mimeType' => $mime,
+					'data'     => $data,
+				];
+			}
+		}
+
 		$safe_body = wp_kses_post( nl2br( $body ) );
 
 		if ( is_user_logged_in() ) {
@@ -123,7 +199,7 @@ class FSWA_Ajax {
 			$first = $user->first_name;
 			$last  = $user->last_name;
 
-			$result = $api->create_conversation( $mailbox_id, $subject, $safe_body, $email, $first, $last );
+			$result = $api->create_conversation( $mailbox_id, $subject, $safe_body, $email, $first, $last, $attachments );
 			if ( is_wp_error( $result ) ) {
 				wp_send_json_error( [ 'message' => $result->get_error_message() ], 500 );
 			}
@@ -155,7 +231,7 @@ class FSWA_Ajax {
 			$first      = $name_parts[0];
 			$last       = $name_parts[1] ?? '';
 
-			$result = $api->create_conversation( $mailbox_id, $subject, $safe_body, $guest_email, $first, $last );
+			$result = $api->create_conversation( $mailbox_id, $subject, $safe_body, $guest_email, $first, $last, $attachments );
 			if ( is_wp_error( $result ) ) {
 				wp_send_json_error( [ 'message' => $result->get_error_message() ], 500 );
 			}

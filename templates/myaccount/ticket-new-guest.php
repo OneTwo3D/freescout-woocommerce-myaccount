@@ -25,7 +25,7 @@ $is_guest         = ! is_user_logged_in();
 	<div class="fswa-notice fswa-notice--success" id="fswa-new-ticket-success" style="display:none;"></div>
 	<div class="fswa-notice fswa-notice--error"   id="fswa-new-ticket-error"   style="display:none;"></div>
 
-	<form id="fswa-new-ticket-form" class="fswa-form" novalidate>
+	<form id="fswa-new-ticket-form" class="fswa-form" novalidate enctype="multipart/form-data">
 		<input type="hidden" name="action" value="fswa_create_ticket">
 		<input type="hidden" name="nonce"  value="<?php echo esc_attr( wp_create_nonce( 'fswa_nonce' ) ); ?>">
 
@@ -96,6 +96,28 @@ $is_guest         = ! is_user_logged_in();
 				required
 			></textarea>
 		</div>
+
+		<div class="fswa-form-field">
+			<label for="fswa-attachments"><?php esc_html_e( 'Attachments', 'fswa' ); ?></label>
+			<input
+				type="file"
+				id="fswa-attachments"
+				name="attachments[]"
+				multiple
+				accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.txt"
+				class="fswa-file-input"
+			>
+			<p class="fswa-form-field__help"><?php esc_html_e( 'Optional. PDF, images (JPG, PNG, GIF, WebP), or TXT — max 10 MB per file, up to 5 files.', 'fswa' ); ?></p>
+		</div>
+
+		<?php
+		$turnstile_site_key = get_option( 'fswa_turnstile_site_key', '' );
+		if ( $turnstile_site_key ) :
+		?>
+		<div class="fswa-form-field fswa-captcha-field">
+			<div class="cf-turnstile" data-sitekey="<?php echo esc_attr( $turnstile_site_key ); ?>"></div>
+		</div>
+		<?php endif; ?>
 
 		<button type="submit" class="button fswa-btn fswa-btn-submit" id="fswa-new-ticket-submit">
 			<?php esc_html_e( 'Submit Ticket', 'fswa' ); ?>

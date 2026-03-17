@@ -356,6 +356,42 @@
 }
 
 /* --------------------------------------------------------------------------
+   File upload input
+   -------------------------------------------------------------------------- */
+.fswa-file-input {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px dashed #d1d5db;
+  border-radius: 5px;
+  background: #ffffff;
+  font-size: 0.9em;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.fswa-file-input:hover,
+.fswa-file-input:focus {
+  border-color: #dc2626;
+  background: #fff5f5;
+  outline: none;
+}
+
+.fswa-form-field__help {
+  margin: 6px 0 0;
+  font-size: 0.82em;
+  color: #6b7280;
+}
+
+/* --------------------------------------------------------------------------
+   Turnstile captcha widget
+   -------------------------------------------------------------------------- */
+.fswa-captcha-field {
+  margin-bottom: 20px;
+}
+
+/* --------------------------------------------------------------------------
    Empty state
    -------------------------------------------------------------------------- */
 .fswa-tickets__empty {

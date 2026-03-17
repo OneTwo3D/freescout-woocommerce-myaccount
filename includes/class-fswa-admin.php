@@ -233,6 +233,48 @@ class FSWA_Admin {
 			'fswa-settings',
 			'fswa_kb'
 		);
+
+		// ------------------------------------------------------------------ //
+		// Section: Spam Protection
+		// ------------------------------------------------------------------ //
+		add_settings_section(
+			'fswa_spam',
+			__( 'Spam Protection', 'fswa' ),
+			function () {
+				echo '<p>' . wp_kses(
+					__( 'Add a <a href="https://www.cloudflare.com/products/turnstile/" target="_blank" rel="noopener">Cloudflare Turnstile</a> captcha to the public ticket submission form. Leave blank to disable. Obtain your keys from the Cloudflare dashboard.', 'fswa' ),
+					[ 'a' => [ 'href' => [], 'target' => [], 'rel' => [] ] ]
+				) . '</p>';
+			},
+			'fswa-settings'
+		);
+
+		self::register_field(
+			'fswa_turnstile_site_key',
+			__( 'Turnstile Site Key', 'fswa' ),
+			'fswa_spam',
+			'text',
+			'',
+			'sanitize_text_field',
+			__( 'Shown to visitors — safe to expose publicly.', 'fswa' )
+		);
+
+		// Secret key uses password input so it is masked in the admin.
+		register_setting( 'fswa-settings', 'fswa_turnstile_secret_key', [
+			'type'              => 'string',
+			'sanitize_callback' => 'sanitize_text_field',
+		] );
+		add_settings_field(
+			'fswa_turnstile_secret_key',
+			__( 'Turnstile Secret Key', 'fswa' ),
+			function () {
+				$value = get_option( 'fswa_turnstile_secret_key', '' );
+				echo '<input type="password" id="fswa_turnstile_secret_key" name="fswa_turnstile_secret_key" value="' . esc_attr( $value ) . '" class="regular-text" autocomplete="off">';
+				echo '<p class="description">' . esc_html__( 'Keep this secret — never expose it publicly.', 'fswa' ) . '</p>';
+			},
+			'fswa-settings',
+			'fswa_spam'
+		);
 	}
 
 	// -------------------------------------------------------------------------
