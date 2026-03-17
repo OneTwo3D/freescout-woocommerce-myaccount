@@ -31,7 +31,7 @@ class FSWA_MyAccount {
 	}
 
 	public static function add_menu_item( array $items ): array {
-		$label = get_option( 'fswa_menu_label', __( 'Support Tickets', 'fswa' ) );
+		$label = get_option( 'fswa_menu_label' ) ?: __( 'Support Tickets', 'fswa' );
 
 		// Insert before "logout".
 		$logout = $items['customer-logout'] ?? null;

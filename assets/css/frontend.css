@@ -3,6 +3,28 @@
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
+   My Account navigation – custom endpoint items
+   Some WooCommerce themes apply icon-font ::before glyphs to all nav links,
+   which can render as solid coloured blocks for unrecognised endpoint slugs.
+   Reset those pseudo-elements and keep text legible for our two endpoints.
+   -------------------------------------------------------------------------- */
+.woocommerce-MyAccount-navigation-link--support-tickets > a,
+.woocommerce-MyAccount-navigation-link--knowledge-base > a {
+  color: inherit;
+  font-size: inherit;
+  font-family: inherit;
+}
+
+.woocommerce-MyAccount-navigation-link--support-tickets > a::before,
+.woocommerce-MyAccount-navigation-link--knowledge-base > a::before,
+.woocommerce-MyAccount-navigation-link--support-tickets > a::after,
+.woocommerce-MyAccount-navigation-link--knowledge-base > a::after {
+  content: '' !important;
+  font-family: inherit !important;
+  display: none !important;
+}
+
+/* --------------------------------------------------------------------------
    Layout helpers
    -------------------------------------------------------------------------- */
 .fswa-tickets,

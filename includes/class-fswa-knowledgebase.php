@@ -36,7 +36,7 @@ class FSWA_KnowledgeBase {
 			return $items;
 		}
 
-		$label  = get_option( 'fswa_kb_menu_label', __( 'Knowledge Base', 'fswa' ) );
+		$label  = get_option( 'fswa_kb_menu_label' ) ?: __( 'Knowledge Base', 'fswa' );
 		$logout = $items['customer-logout'] ?? null;
 		unset( $items['customer-logout'] );
 		$items[ self::ENDPOINT ] = esc_html( $label );
