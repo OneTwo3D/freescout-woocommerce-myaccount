@@ -65,7 +65,7 @@ Use the **Test API Connection** button to confirm the credentials are valid. A s
 | **KB Menu Label** | `Knowledge Base` | Text shown in the My Account navigation menu for the KB tab. |
 | **Articles Per Page** | `15` | Number of articles shown per page in category and search views (1–50). |
 | **Search Bar** | Enabled | Displays a search bar at the top of the KB home page with live autocomplete. |
-| **Category Hierarchy** | — | The KB API returns a flat category list with no parent/child information. Enter your hierarchy here, one parent per line: `parent_id:child_id,child_id,...`. Example: `1:2,3,9` makes categories 2, 3 and 9 appear as subcategories of category 1. Child categories are hidden from the KB home page and shown only when their parent is opened. |
+| **Category Hierarchy** | — | Only needed for older KB modules that return a flat category list with no parent/child information. Updated versions of the EcomGraduates module include native hierarchy support — leave blank if your module version does. For older modules, define the hierarchy here, one parent per line: `parent_id:child_id,child_id,...`. Example: `1:2,3,9` makes categories 2, 3 and 9 appear as subcategories of category 1. |
 
 ---
 
@@ -281,6 +281,10 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 ---
 
 ## Changelog
+
+### 1.1.37
+- **New:** The plugin now uses the native `parent_id` field returned by the updated EcomGraduates KB module (v2+) to determine category hierarchy automatically — the **Category Hierarchy** admin setting is no longer required for users on the updated module.
+- **Improvement:** `render_category()` now checks for a `subcategories` array embedded in the category endpoint response before falling back to a second `get_kb_categories()` API call. On updated module versions this eliminates one round-trip per category page load.
 
 ### 1.1.35
 - **Fix:** KB search no longer redirects to the WordPress blog search page. The search form now submits via `?fswa_q=` instead of `?s=`, which previously triggered WordPress's `redirect_canonical()` and sent users away from the KB.

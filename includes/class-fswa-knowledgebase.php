@@ -174,40 +174,42 @@ class FSWA_KnowledgeBase {
 			?? ( null !== $category ? ( $category['articles'] ?? $category['docs'] ?? null ) : null )
 			?? ( isset( $data[0] ) ? $data : [] );
 
-		// Fetch all categories to resolve:
-		//   1. Category metadata (when not embedded in the category endpoint response).
-		//   2. Subcategories (child categories whose parent is $category_id).
-		$subcategories = [];
-		$cats_result   = $api->get_kb_categories( $mailbox_id );
-		if ( ! is_wp_error( $cats_result ) ) {
-			$all_cats = self::unwrap( $cats_result, 'categories' );
+		// Prefer subcategories embedded in the category endpoint response —
+		// the updated EcomGraduates module includes a 'subcategories' array
+		// directly on the category object, saving a second API call.
+		$embedded_subs = $data['children']
+			?? $data['subcategories']
+			?? $data['subCategories']
+			?? ( null !== $category ? ( $category['children'] ?? $category['subcategories'] ?? null ) : null )
+			?? null;
 
-			if ( null === $category ) {
-				foreach ( $all_cats as $c ) {
-					if ( (int) ( $c['id'] ?? 0 ) === $category_id ) {
-						$category = $c;
-						break;
+		$subcategories = ( null !== $embedded_subs && is_array( $embedded_subs ) )
+			? array_values( $embedded_subs )
+			: [];
+
+		// If subcategories weren't embedded (older module versions) or category
+		// metadata is still missing, fetch the full categories list and resolve both.
+		if ( empty( $subcategories ) || null === $category ) {
+			$cats_result = $api->get_kb_categories( $mailbox_id );
+			if ( ! is_wp_error( $cats_result ) ) {
+				$all_cats = self::unwrap( $cats_result, 'categories' );
+
+				if ( null === $category ) {
+					foreach ( $all_cats as $c ) {
+						if ( (int) ( $c['id'] ?? 0 ) === $category_id ) {
+							$category = $c;
+							break;
+						}
 					}
 				}
-			}
 
-			foreach ( $all_cats as $c ) {
-				if ( self::get_parent_id( $c ) === $category_id ) {
-					$subcategories[] = $c;
+				if ( empty( $subcategories ) ) {
+					foreach ( $all_cats as $c ) {
+						if ( self::get_parent_id( $c ) === $category_id ) {
+							$subcategories[] = $c;
+						}
+					}
 				}
-			}
-		}
-
-		// Fallback: if the categories-list API didn't include parent info, check
-		// whether the category endpoint itself embeds its children/subcategories.
-		if ( empty( $subcategories ) ) {
-			$embedded = $data['children']
-				?? $data['subcategories']
-				?? $data['subCategories']
-				?? ( null !== $category ? ( $category['children'] ?? $category['subcategories'] ?? null ) : null )
-				?? [];
-			if ( ! empty( $embedded ) && is_array( $embedded ) ) {
-				$subcategories = array_values( $embedded );
 			}
 		}
 
