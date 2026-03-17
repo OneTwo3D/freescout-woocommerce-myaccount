@@ -1,0 +1,284 @@
+<?php
+/**
+ * FreeScout REST API wrapper.
+ *
+ * Handles all HTTP communication with the FreeScout API.
+ * Docs: https://github.com/freescout-helpdesk/freescout/wiki/REST-API
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+class FSWA_API {
+
+	/** @var string Base URL of the FreeScout installation, no trailing slash. */
+	private string $base_url;
+
+	/** @var string FreeScout API key. */
+	private string $api_key;
+
+	/** @var int HTTP request timeout in seconds. */
+	private int $timeout;
+
+	public function __construct( string $base_url, string $api_key, int $timeout = 15 ) {
+		$this->base_url = untrailingslashit( $base_url );
+		$this->api_key  = $api_key;
+		$this->timeout  = $timeout;
+	}
+
+	// -------------------------------------------------------------------------
+	// Factory
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Build an instance from the saved plugin options.
+	 *
+	 * @return static|null  Null when the plugin has not been configured yet.
+	 */
+	public static function from_options(): ?self {
+		$url = get_option( 'fswa_api_url', '' );
+		$key = get_option( 'fswa_api_key', '' );
+
+		if ( empty( $url ) || empty( $key ) ) {
+			return null;
+		}
+
+		return new self( $url, $key );
+	}
+
+	// -------------------------------------------------------------------------
+	// Customers
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Look up the FreeScout customer ID for a given e-mail address.
+	 *
+	 * @param  string $email
+	 * @return int|WP_Error  Customer ID or WP_Error on failure.
+	 */
+	public function get_customer_id_by_email( string $email ) {
+		$response = $this->get( '/api/customers', [ 'email' => $email ] );
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$customers = $response['_embedded']['customers'] ?? [];
+		if ( empty( $customers ) ) {
+			return new WP_Error( 'fswa_no_customer', __( 'No FreeScout customer found for your e-mail address.', 'fswa' ) );
+		}
+
+		return (int) $customers[0]['id'];
+	}
+
+	// -------------------------------------------------------------------------
+	// Conversations / Tickets
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Return a paginated list of conversations for a customer.
+	 *
+	 * @param  int $customer_id  FreeScout customer ID.
+	 * @param  int $page         1-based page number.
+	 * @param  int $per_page     Number of items per page (max 50 by API).
+	 * @return array|WP_Error
+	 */
+	public function get_conversations( int $customer_id, int $page = 1, int $per_page = 20 ) {
+		return $this->get( '/api/conversations', [
+			'customer' => $customer_id,
+			'page'     => $page,
+			'pageSize' => min( $per_page, 50 ),
+			'sortField'=> 'updatedAt',
+			'sortOrder'=> 'desc',
+		] );
+	}
+
+	/**
+	 * Return a single conversation with its thread.
+	 *
+	 * @param  int $conversation_id
+	 * @return array|WP_Error
+	 */
+	public function get_conversation( int $conversation_id ) {
+		return $this->get( '/api/conversations/' . $conversation_id );
+	}
+
+	/**
+	 * Return threads (messages) for a conversation.
+	 *
+	 * @param  int $conversation_id
+	 * @return array|WP_Error
+	 */
+	public function get_threads( int $conversation_id ) {
+		return $this->get( '/api/conversations/' . $conversation_id . '/threads' );
+	}
+
+	/**
+	 * Post a customer reply to an existing conversation.
+	 *
+	 * @param  int    $conversation_id
+	 * @param  string $body         HTML or plain text message body.
+	 * @param  string $customer_email
+	 * @return array|WP_Error  Created thread object or error.
+	 */
+	public function post_reply( int $conversation_id, string $body, string $customer_email ) {
+		$payload = [
+			'type'   => 'customer',
+			'body'   => wp_kses_post( $body ),
+			'customer' => [
+				'email' => $customer_email,
+			],
+		];
+
+		return $this->post(
+			'/api/conversations/' . $conversation_id . '/threads',
+			$payload
+		);
+	}
+
+	/**
+	 * Create a new conversation (ticket) on behalf of a customer.
+	 *
+	 * @param  int    $mailbox_id
+	 * @param  string $subject
+	 * @param  string $body
+	 * @param  string $customer_email
+	 * @param  string $customer_first_name
+	 * @param  string $customer_last_name
+	 * @return array|WP_Error
+	 */
+	public function create_conversation(
+		int    $mailbox_id,
+		string $subject,
+		string $body,
+		string $customer_email,
+		string $customer_first_name = '',
+		string $customer_last_name  = ''
+	) {
+		$payload = [
+			'type'      => 'email',
+			'mailboxId' => $mailbox_id,
+			'subject'   => sanitize_text_field( $subject ),
+			'customer'  => [
+				'email'     => $customer_email,
+				'firstName' => $customer_first_name,
+				'lastName'  => $customer_last_name,
+			],
+			'threads'   => [
+				[
+					'type'     => 'customer',
+					'body'     => wp_kses_post( $body ),
+					'customer' => [ 'email' => $customer_email ],
+				],
+			],
+		];
+
+		return $this->post( '/api/conversations', $payload );
+	}
+
+	/**
+	 * Return all configured mailboxes (used when creating new tickets).
+	 *
+	 * @return array|WP_Error
+	 */
+	public function get_mailboxes() {
+		return $this->get( '/api/mailboxes' );
+	}
+
+	// -------------------------------------------------------------------------
+	// HTTP helpers
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Perform a GET request.
+	 *
+	 * @param  string $endpoint  Path starting with /.
+	 * @param  array  $params    Query string parameters.
+	 * @return array|WP_Error    Decoded JSON body or WP_Error.
+	 */
+	private function get( string $endpoint, array $params = [] ) {
+		$url = $this->base_url . $endpoint;
+		if ( ! empty( $params ) ) {
+			$url = add_query_arg( array_map( 'rawurlencode', array_map( 'strval', $params ) ), $url );
+			// add_query_arg already URL-encodes; rebuild correctly:
+			$url = $this->base_url . $endpoint . '?' . http_build_query( $params );
+		}
+
+		$response = wp_remote_get( $url, $this->request_args() );
+		return $this->parse_response( $response );
+	}
+
+	/**
+	 * Perform a POST request with a JSON body.
+	 *
+	 * @param  string $endpoint
+	 * @param  array  $data
+	 * @return array|WP_Error
+	 */
+	private function post( string $endpoint, array $data ) {
+		$url  = $this->base_url . $endpoint;
+		$args = $this->request_args();
+
+		$args['method'] = 'POST';
+		$args['body']   = wp_json_encode( $data );
+		$args['headers']['Content-Type'] = 'application/json';
+
+		$response = wp_remote_post( $url, $args );
+		return $this->parse_response( $response, [ 200, 201 ] );
+	}
+
+	/**
+	 * Default wp_remote_* argument array.
+	 */
+	private function request_args(): array {
+		return [
+			'timeout' => $this->timeout,
+			'headers' => [
+				'X-FreeScout-API-Key' => $this->api_key,
+				'Accept'              => 'application/json',
+			],
+		];
+	}
+
+	/**
+	 * Parse a wp_remote_* response.
+	 *
+	 * @param  array|WP_Error $response
+	 * @param  int[]          $valid_codes  HTTP status codes treated as success.
+	 * @return array|WP_Error
+	 */
+	private function parse_response( $response, array $valid_codes = [ 200 ] ) {
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$status = (int) wp_remote_retrieve_response_code( $response );
+		$body   = wp_remote_retrieve_body( $response );
+
+		if ( ! in_array( $status, $valid_codes, true ) ) {
+			$message = $this->extract_error_message( $body ) ?: sprintf(
+				/* translators: %d HTTP status code */
+				__( 'FreeScout API returned HTTP %d.', 'fswa' ),
+				$status
+			);
+			return new WP_Error( 'fswa_api_error', $message, [ 'status' => $status ] );
+		}
+
+		if ( empty( $body ) ) {
+			return [];
+		}
+
+		$decoded = json_decode( $body, true );
+		if ( json_last_error() !== JSON_ERROR_NONE ) {
+			return new WP_Error( 'fswa_json_error', __( 'Could not decode FreeScout API response.', 'fswa' ) );
+		}
+
+		return $decoded;
+	}
+
+	/**
+	 * Try to pull a human-readable error message from an API error body.
+	 */
+	private function extract_error_message( string $body ): string {
+		$data = json_decode( $body, true );
+		return $data['message'] ?? $data['error'] ?? '';
+	}
+}
