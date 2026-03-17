@@ -305,12 +305,19 @@ class FSWA_KnowledgeBase {
 		// Try the dedicated single-article endpoint (EcomGraduates module).
 		$article_result = $api->get_kb_article( $mailbox_id, $category_id, $article_id );
 
+		$category = null;
+
 		if ( ! is_wp_error( $article_result ) ) {
 			$data    = self::unwrap( $article_result );
 			// Some modules nest the article under an 'article' key.
 			$article = ( isset( $data['article'] ) && is_array( $data['article'] ) )
 				? $data['article']
 				: $data;
+			// The updated module includes the category object in the same response —
+			// use it for the breadcrumb to avoid a second API call.
+			if ( isset( $data['category'] ) && is_array( $data['category'] ) ) {
+				$category = $data['category'];
+			}
 		} else {
 			// Fall back: load the category and find the article in the list.
 			// This is compatible with the jtorvald module (2-endpoint version).
@@ -341,11 +348,13 @@ class FSWA_KnowledgeBase {
 					. '</p>';
 				return;
 			}
+
+			$category = $cat_meta;
 		}
 
-		// Fetch category metadata for the breadcrumb.
-		$category = null;
-		if ( $category_id ) {
+		// If category metadata still missing (e.g. article endpoint returned no
+		// category object and the fallback path wasn't taken), fetch it now.
+		if ( null === $category && $category_id ) {
 			$cats_result = $api->get_kb_categories( $mailbox_id );
 			if ( ! is_wp_error( $cats_result ) ) {
 				foreach ( self::unwrap( $cats_result, 'categories' ) as $c ) {

@@ -282,6 +282,10 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 
 ## Changelog
 
+### 1.1.39
+- **Fix:** Search result article links now correctly resolve the category ID when the API returns it as a `categories` array (`[{id, name}]`) rather than a flat `categoryId` field. Previously these articles always fell back to the slower `art-{id}` URL scheme that requires an extra server-side API lookup.
+- **Improvement:** `render_article()` now uses the `category` object embedded in the article endpoint response (added in the updated EcomGraduates module) for the breadcrumb, eliminating a second `get_kb_categories()` call per article page load. A categories-list fallback is still made only when the article endpoint returns no category data.
+
 ### 1.1.37
 - **New:** The plugin now uses the native `parent_id` field returned by the updated EcomGraduates KB module (v2+) to determine category hierarchy automatically — the **Category Hierarchy** admin setting is no longer required for users on the updated module.
 - **Improvement:** `render_category()` now checks for a `subcategories` array embedded in the category endpoint response before falling back to a second `get_kb_categories()` API call. On updated module versions this eliminates one round-trip per category page load.

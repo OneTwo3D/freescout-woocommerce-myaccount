@@ -70,9 +70,11 @@ defined( 'ABSPATH' ) || exit;
 			<?php foreach ( $articles as $article ) :
 				$art_id    = (int) ( $article['id'] ?? 0 );
 				$art_title = esc_html( $article['name'] ?? $article['title'] ?? __( '(untitled)', 'fswa' ) );
-				// categoryId may be a top-level integer or nested as category.id
+				// categoryId may be a top-level integer, nested as category.id,
+				// or (new API) a 'categories' array: [{id, name}, ...]
 				$art_cat   = (int) ( $article['categoryId'] ?? $article['category_id']
-					?? ( $article['category']['id'] ?? 0 ) );
+					?? ( $article['category']['id'] ?? null )
+					?? ( $article['categories'][0]['id'] ?? 0 ) );
 				$art_url   = $art_cat ? FSWA_KnowledgeBase::article_url( $art_cat, $art_id ) : FSWA_KnowledgeBase::article_url_by_id( $art_id );
 				$excerpt   = wp_trim_words( wp_strip_all_tags( $article['text'] ?? $article['preview'] ?? '' ), 20 );
 			?>
