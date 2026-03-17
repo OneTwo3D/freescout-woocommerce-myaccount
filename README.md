@@ -173,6 +173,28 @@ Five shortcodes let you embed the ticket form or links to My Account pages anywh
 | `[fswa_tickets_url]` | — | Outputs only the raw URL of the Support Tickets page. |
 | `[fswa_kb_url]` | — | Outputs only the raw URL of the Knowledge Base page. |
 
+### `[fswa_kb]`
+
+Renders the full Knowledge Base browser on any WordPress page — no login required. Visitors can browse categories, read articles, and use the live-search autocomplete.
+
+Navigation stays on the same page using `?fswa_kb=` query parameters, so no extra rewrite rules or permalink changes are needed.
+
+**Attributes:**
+
+| Attribute | Default | Description |
+|---|---|---|
+| `ticket_url` | My Account new-ticket URL | URL for the "Still need help? Open a ticket" button on article pages. Set this to a page that contains `[fswa_new_ticket_form]` so guests can submit without being redirected to login. |
+
+**Examples:**
+
+```
+[fswa_kb]
+
+[fswa_kb ticket_url="/contact/support/"]
+```
+
+The shortcode respects the **KB Enabled**, **KB Mailbox ID**, and **Search Bar** settings from the plugin admin page.
+
 ### `[fswa_new_ticket_form]`
 
 Renders a complete ticket submission form directly on any WordPress page. No attributes are required.
@@ -260,6 +282,7 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 ## Changelog
 
 ### 1.1.10
+- **New:** `[fswa_kb]` shortcode — renders the full Knowledge Base browser (home, categories, articles, search) on any WordPress page without requiring login. Navigation uses `?fswa_kb=` query parameters. Accepts an optional `ticket_url` attribute to point the "Still need help?" button at a custom page (e.g. one containing `[fswa_new_ticket_form]`). KB live-search autocomplete also works for guests.
 - **New:** `[fswa_new_ticket_form]` shortcode — renders a full ticket submission form on any WordPress page. Guests (non-logged-in visitors) must supply their name and email address; logged-in users are identified automatically. On guest success the form slides away and a confirmation including the guest's email is shown. Logged-in users are redirected to the new ticket in My Account as usual.
 - **Fix:** Nav icon vertical alignment corrected to `vertical-align: middle` (matches WooCommerce theme convention); added `align-self: center` for flex-based themes.
 

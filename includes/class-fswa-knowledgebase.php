@@ -25,6 +25,33 @@ class FSWA_KnowledgeBase {
 
 	const ENDPOINT = 'knowledge-base';
 
+	// -------------------------------------------------------------------------
+	// Shortcode context
+	// When $shortcode_base is set the class builds ?fswa_kb=... URLs instead of
+	// My-Account path URLs.  Set by FSWA_Shortcodes before rendering; cleared
+	// afterwards.
+	// -------------------------------------------------------------------------
+
+	/** Base URL of the page that hosts the [fswa_kb] shortcode. */
+	private static ?string $shortcode_base = null;
+
+	/** Override for the "Still need help?" link on article pages. */
+	private static string $shortcode_ticket_url = '';
+
+	public static function set_shortcode_base( ?string $url ): void {
+		self::$shortcode_base = $url;
+	}
+
+	public static function set_shortcode_ticket_url( string $url ): void {
+		self::$shortcode_ticket_url = $url;
+	}
+
+	/** Reset all shortcode-context state. */
+	public static function clear_shortcode_context(): void {
+		self::$shortcode_base       = null;
+		self::$shortcode_ticket_url = '';
+	}
+
 	public static function init(): void {
 		add_action( 'init', [ __CLASS__, 'add_endpoint' ] );
 		add_filter( 'woocommerce_account_menu_items', [ __CLASS__, 'add_menu_item' ] );
@@ -235,7 +262,7 @@ class FSWA_KnowledgeBase {
 	/**
 	 * Configured KB mailbox ID (0 = not set).
 	 */
-	private static function get_mailbox_id(): int {
+	public static function get_mailbox_id(): int {
 		return (int) get_option( 'fswa_kb_mailbox_id', 0 );
 	}
 
@@ -286,14 +313,21 @@ class FSWA_KnowledgeBase {
 		}
 	}
 
-	/**
-	 * Convenience URL builders used in templates.
-	 */
+	// -------------------------------------------------------------------------
+	// URL builders — context-aware (My Account path vs shortcode query-param)
+	// -------------------------------------------------------------------------
+
 	public static function home_url(): string {
+		if ( null !== self::$shortcode_base ) {
+			return self::$shortcode_base;
+		}
 		return wc_get_account_endpoint_url( self::ENDPOINT );
 	}
 
 	public static function category_url( int $id ): string {
+		if ( null !== self::$shortcode_base ) {
+			return add_query_arg( 'fswa_kb', 'cat-' . $id, self::$shortcode_base );
+		}
 		return wc_get_account_endpoint_url( self::ENDPOINT ) . 'cat-' . $id . '/';
 	}
 
@@ -307,11 +341,81 @@ class FSWA_KnowledgeBase {
 	 * @param int $article_id   Article ID.
 	 */
 	public static function article_url( int $category_id, int $article_id ): string {
+		if ( null !== self::$shortcode_base ) {
+			return add_query_arg( 'fswa_kb', 'cat-' . $category_id . '-art-' . $article_id, self::$shortcode_base );
+		}
 		return wc_get_account_endpoint_url( self::ENDPOINT ) . 'cat-' . $category_id . '-art-' . $article_id . '/';
 	}
 
 	public static function search_url( string $query = '' ): string {
+		if ( null !== self::$shortcode_base ) {
+			$base = add_query_arg( 'fswa_kb', 'search', self::$shortcode_base );
+			return $query ? add_query_arg( 's', rawurlencode( $query ), $base ) : $base;
+		}
 		$base = wc_get_account_endpoint_url( self::ENDPOINT ) . 'search/';
 		return $query ? add_query_arg( 's', rawurlencode( $query ), $base ) : $base;
+	}
+
+	/**
+	 * The `action` URL for the KB search <form>.
+	 *
+	 * In My Account mode this equals search_url() (path-based, the `?s` param
+	 * is appended by the browser on GET submission).
+	 *
+	 * In shortcode mode a GET form discards the action's query string, so we
+	 * return the bare page URL and let search_form_extra_fields() emit a hidden
+	 * `fswa_kb=search` input instead.
+	 */
+	public static function search_form_action(): string {
+		if ( null !== self::$shortcode_base ) {
+			return self::$shortcode_base;
+		}
+		return wc_get_account_endpoint_url( self::ENDPOINT ) . 'search/';
+	}
+
+	/**
+	 * Output any hidden inputs the search form needs.
+	 * In shortcode mode this emits <input type="hidden" name="fswa_kb" value="search">
+	 * so the GET submission preserves the routing parameter.
+	 */
+	public static function search_form_extra_fields(): void {
+		if ( null !== self::$shortcode_base ) {
+			echo '<input type="hidden" name="fswa_kb" value="search">';
+		}
+	}
+
+	/**
+	 * URL for the "Still need help? Open a ticket" link on article pages.
+	 * Returns the shortcode-supplied URL when set, otherwise the My Account
+	 * new-ticket URL.
+	 */
+	public static function ticket_url(): string {
+		if ( '' !== self::$shortcode_ticket_url ) {
+			return self::$shortcode_ticket_url;
+		}
+		return wc_get_account_endpoint_url( FSWA_MyAccount::ENDPOINT ) . 'new/';
+	}
+
+	// -------------------------------------------------------------------------
+	// Shortcode dispatcher
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Render the appropriate KB view for the [fswa_kb] shortcode.
+	 * Reads ?fswa_kb= instead of the WooCommerce endpoint query var.
+	 * Call only after set_shortcode_base() has been called.
+	 */
+	public static function dispatch_shortcode( FSWA_API $api, int $mailbox_id ): void {
+		$value = sanitize_text_field( wp_unslash( $_GET['fswa_kb'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification
+
+		if ( 'search' === $value ) {
+			self::render_search( $api, $mailbox_id );
+		} elseif ( preg_match( '/^cat-(\d+)-art-(\d+)$/', $value, $m ) ) {
+			self::render_article( (int) $m[1], (int) $m[2], $api, $mailbox_id );
+		} elseif ( preg_match( '/^cat-(\d+)$/', $value, $m ) ) {
+			self::render_category( (int) $m[1], $api, $mailbox_id );
+		} else {
+			self::render_home( $api, $mailbox_id );
+		}
 	}
 }

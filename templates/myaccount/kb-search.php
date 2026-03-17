@@ -28,7 +28,8 @@ defined( 'ABSPATH' ) || exit;
 
 	<!-- Search bar -->
 	<div class="fswa-kb-search">
-		<form class="fswa-kb-search__form" action="<?php echo esc_url( FSWA_KnowledgeBase::search_url() ); ?>" method="get" role="search">
+		<form class="fswa-kb-search__form" action="<?php echo esc_url( FSWA_KnowledgeBase::search_form_action() ); ?>" method="get" role="search">
+			<?php FSWA_KnowledgeBase::search_form_extra_fields(); ?>
 			<div class="fswa-kb-search__input-wrap">
 				<input
 					type="search"

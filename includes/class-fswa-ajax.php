@@ -17,6 +17,7 @@ class FSWA_Ajax {
 		add_action( 'wp_ajax_fswa_create_ticket',       [ __CLASS__, 'create_ticket' ] );
 		add_action( 'wp_ajax_nopriv_fswa_create_ticket', [ __CLASS__, 'create_ticket' ] ); // guest support
 		add_action( 'wp_ajax_fswa_kb_search',           [ __CLASS__, 'kb_search' ] );
+		add_action( 'wp_ajax_nopriv_fswa_kb_search',    [ __CLASS__, 'kb_search' ] );   // guest KB search
 	}
 
 	// -------------------------------------------------------------------------
@@ -179,7 +180,8 @@ class FSWA_Ajax {
 	 * Used by the live-search autocomplete on the KB search bar.
 	 */
 	public static function kb_search(): void {
-		self::verify_nonce();
+		// Login not required — KB search is open to guests via the [fswa_kb] shortcode.
+		self::verify_nonce( false );
 
 		if ( ! get_option( 'fswa_kb_enabled', 1 ) ) {
 			wp_send_json_error( [ 'message' => __( 'Knowledge base is not available.', 'fswa' ) ], 403 );

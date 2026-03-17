@@ -2,6 +2,7 @@
 /**
  * Shortcodes for embedding links and forms anywhere on the site.
  *
+ * [fswa_kb]               – Full Knowledge Base browser. Works for guests and logged-in users.
  * [fswa_new_ticket_form]  – Full new-ticket form. Works for guests and logged-in users.
  * [fswa_tickets_link]     – Anchor link to the Support Tickets My Account page.
  * [fswa_kb_link]          – Anchor link to the Knowledge Base My Account page.
@@ -18,6 +19,7 @@ defined( 'ABSPATH' ) || exit;
 class FSWA_Shortcodes {
 
 	public static function init(): void {
+		add_shortcode( 'fswa_kb',              [ __CLASS__, 'kb' ] );
 		add_shortcode( 'fswa_new_ticket_form', [ __CLASS__, 'new_ticket_form' ] );
 		add_shortcode( 'fswa_tickets_link',    [ __CLASS__, 'tickets_link' ] );
 		add_shortcode( 'fswa_kb_link',         [ __CLASS__, 'kb_link' ] );
@@ -28,6 +30,67 @@ class FSWA_Shortcodes {
 	// -------------------------------------------------------------------------
 	// Shortcode handlers
 	// -------------------------------------------------------------------------
+
+	/**
+	 * [fswa_kb ticket_url="..."]
+	 *
+	 * Renders the complete Knowledge Base browser on any WordPress page.
+	 * Works for guests and logged-in users.
+	 *
+	 * Navigation uses ?fswa_kb= query parameters on the current page so no
+	 * extra rewrite rules or My Account access is needed.
+	 *
+	 * Attributes:
+	 *   ticket_url – Optional URL for the "Still need help? Open a ticket" link
+	 *                on article pages. Defaults to the My Account new-ticket URL
+	 *                (guests will be redirected to login).
+	 *
+	 * @param  array|string $atts
+	 * @return string  HTML output.
+	 */
+	public static function kb( $atts ): string {
+		if ( ! get_option( 'fswa_kb_enabled', 1 ) ) {
+			return '<p class="fswa-notice fswa-notice--info">'
+				. esc_html__( 'The knowledge base is not available.', 'fswa' )
+				. '</p>';
+		}
+
+		$api = FSWA_API::from_options();
+		if ( ! $api ) {
+			return '<p class="fswa-notice fswa-notice--error">'
+				. esc_html__( 'Knowledge base is not available at the moment. Please try again later.', 'fswa' )
+				. '</p>';
+		}
+
+		$mailbox_id = FSWA_KnowledgeBase::get_mailbox_id();
+		if ( ! $mailbox_id ) {
+			return '<p class="fswa-notice fswa-notice--warning">'
+				. esc_html__( 'Knowledge base mailbox is not configured. Please set the KB Mailbox ID under WooCommerce → FreeScout.', 'fswa' )
+				. '</p>';
+		}
+
+		$atts = shortcode_atts( [ 'ticket_url' => '' ], $atts, 'fswa_kb' );
+
+		// Enqueue plugin assets (CSS, JS, nonce for live search).
+		self::enqueue_assets();
+
+		// Set shortcode URL context — all KB links use ?fswa_kb=... on this page.
+		$page_url = remove_query_arg( [ 'fswa_kb', 's' ], get_permalink() ?: home_url( '/' ) );
+		FSWA_KnowledgeBase::set_shortcode_base( $page_url );
+
+		if ( ! empty( $atts['ticket_url'] ) ) {
+			FSWA_KnowledgeBase::set_shortcode_ticket_url( esc_url_raw( $atts['ticket_url'] ) );
+		}
+
+		ob_start();
+		FSWA_KnowledgeBase::dispatch_shortcode( $api, $mailbox_id );
+		$html = (string) ob_get_clean();
+
+		// Always clear context after rendering.
+		FSWA_KnowledgeBase::clear_shortcode_context();
+
+		return $html;
+	}
 
 	/**
 	 * [fswa_new_ticket_form]
