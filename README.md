@@ -161,6 +161,43 @@ Key class names:
 
 ---
 
+## Shortcodes
+
+Four shortcodes let you embed links to the My Account pages anywhere in WordPress (pages, posts, widgets, block editor HTML blocks, etc.).
+
+| Shortcode | Attributes | Description |
+|---|---|---|
+| `[fswa_tickets_link]` | `text`, `class` | Renders an `<a>` link to the Support Tickets My Account page. |
+| `[fswa_kb_link]` | `text`, `class` | Renders an `<a>` link to the Knowledge Base My Account page. |
+| `[fswa_tickets_url]` | — | Outputs only the raw URL of the Support Tickets page. |
+| `[fswa_kb_url]` | — | Outputs only the raw URL of the Knowledge Base page. |
+
+**Attributes** (for `[fswa_tickets_link]` and `[fswa_kb_link]`):
+
+| Attribute | Default | Description |
+|---|---|---|
+| `text` | Configured menu label | The visible link text. |
+| `class` | *(none)* | One or more CSS classes to add to the `<a>` tag. |
+
+**Examples:**
+
+```
+[fswa_tickets_link]
+[fswa_tickets_link text="View my tickets"]
+[fswa_tickets_link text="Open a ticket" class="button"]
+
+[fswa_kb_link]
+[fswa_kb_link text="Browse help articles" class="button"]
+
+<!-- URL-only shortcodes are useful inside custom HTML: -->
+<a href="[fswa_tickets_url]" class="my-custom-class">Support Tickets</a>
+<a href="[fswa_kb_url]">Knowledge Base</a>
+```
+
+The `[fswa_tickets_url]` and `[fswa_kb_url]` shortcodes output a plain escaped URL with no surrounding HTML, so they can be used inside your own markup or as `href` values in custom blocks.
+
+---
+
 ## Hooks & Filters
 
 The plugin is built with extensibility in mind. The following WordPress hooks are available:
@@ -204,6 +241,12 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 ---
 
 ## Changelog
+
+### 1.1.8
+- **New:** SVG icons added to the Support Tickets and Knowledge Base entries in the My Account navigation. Icons use the same Feather icon style as the rest of the plugin (message-square for tickets, book-open for KB). Implemented via CSS `mask-image` so the icon colour automatically inherits the theme's link text colour.
+- **New:** Four shortcodes for embedding links to My Account pages anywhere on the site:
+  - `[fswa_tickets_link]` / `[fswa_kb_link]` — rendered `<a>` elements with optional `text` and `class` attributes.
+  - `[fswa_tickets_url]` / `[fswa_kb_url]` — raw URL output for use inside custom HTML.
 
 ### 1.1.7
 - **New setting:** **KB API Token** — optional token passed as `?token=...` on all Knowledge Base API requests. Required for the EcomGraduates/KnowledgeBaseApiModule (generate it in FreeScout → Knowledge Base API → Settings). Leave blank when using the jtorvald module, which authenticates via the main API Key header instead.

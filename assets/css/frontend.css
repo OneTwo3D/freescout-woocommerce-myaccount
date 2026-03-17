@@ -5,8 +5,9 @@
 /* --------------------------------------------------------------------------
    My Account navigation – custom endpoint items
    Some WooCommerce themes apply icon-font ::before glyphs to all nav links,
-   which can render as solid coloured blocks for unrecognised endpoint slugs.
-   Reset those pseudo-elements and keep text legible for our two endpoints.
+   which renders as a solid block for unrecognised endpoint slugs.
+   We reset the font inheritance, hide ::after, and replace ::before with our
+   own SVG icon via CSS mask-image so it inherits the link's text colour.
    -------------------------------------------------------------------------- */
 .woocommerce-MyAccount-navigation-link--support-tickets > a,
 .woocommerce-MyAccount-navigation-link--knowledge-base > a {
@@ -15,13 +16,43 @@
   font-family: inherit;
 }
 
-.woocommerce-MyAccount-navigation-link--support-tickets > a::before,
-.woocommerce-MyAccount-navigation-link--knowledge-base > a::before,
+/* Hide any trailing icon-font glyph the active theme may inject. */
 .woocommerce-MyAccount-navigation-link--support-tickets > a::after,
 .woocommerce-MyAccount-navigation-link--knowledge-base > a::after {
   content: '' !important;
-  font-family: inherit !important;
   display: none !important;
+}
+
+/* Shared icon setup – mask-image clips a currentColor block to the SVG
+   path so the icon always matches the surrounding link text colour. */
+.woocommerce-MyAccount-navigation-link--support-tickets > a::before,
+.woocommerce-MyAccount-navigation-link--knowledge-base > a::before {
+  content: '' !important;
+  display: inline-block !important;
+  width: 1.1em !important;
+  height: 1.1em !important;
+  margin-right: 0.45em !important;
+  vertical-align: -0.2em !important;
+  font-family: inherit !important;
+  background-color: currentColor !important;
+  -webkit-mask-repeat: no-repeat !important;
+          mask-repeat: no-repeat !important;
+  -webkit-mask-position: center !important;
+          mask-position: center !important;
+  -webkit-mask-size: 100% 100% !important;
+          mask-size: 100% 100% !important;
+}
+
+/* Support Tickets – Feather "message-square" icon */
+.woocommerce-MyAccount-navigation-link--support-tickets > a::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/%3E%3C/svg%3E") !important;
+          mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/%3E%3C/svg%3E") !important;
+}
+
+/* Knowledge Base – Feather "book-open" icon (matches KB template icons) */
+.woocommerce-MyAccount-navigation-link--knowledge-base > a::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") !important;
+          mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") !important;
 }
 
 /* --------------------------------------------------------------------------
