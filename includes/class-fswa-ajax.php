@@ -13,9 +13,10 @@ defined( 'ABSPATH' ) || exit;
 class FSWA_Ajax {
 
 	public static function init(): void {
-		add_action( 'wp_ajax_fswa_post_reply',       [ __CLASS__, 'post_reply' ] );
-		add_action( 'wp_ajax_fswa_create_ticket',    [ __CLASS__, 'create_ticket' ] );
-		add_action( 'wp_ajax_fswa_kb_search',        [ __CLASS__, 'kb_search' ] );
+		add_action( 'wp_ajax_fswa_post_reply',          [ __CLASS__, 'post_reply' ] );
+		add_action( 'wp_ajax_fswa_create_ticket',       [ __CLASS__, 'create_ticket' ] );
+		add_action( 'wp_ajax_nopriv_fswa_create_ticket', [ __CLASS__, 'create_ticket' ] ); // guest support
+		add_action( 'wp_ajax_fswa_kb_search',           [ __CLASS__, 'kb_search' ] );
 	}
 
 	// -------------------------------------------------------------------------
@@ -84,7 +85,8 @@ class FSWA_Ajax {
 	// -------------------------------------------------------------------------
 
 	public static function create_ticket(): void {
-		self::verify_nonce();
+		// Nonce required; login is NOT required (guest submission supported).
+		self::verify_nonce( false );
 
 		if ( ! get_option( 'fswa_allow_new_tickets', 1 ) ) {
 			wp_send_json_error( [ 'message' => __( 'Creating new tickets is not available.', 'fswa' ) ], 403 );
@@ -111,31 +113,61 @@ class FSWA_Ajax {
 			wp_send_json_error( [ 'message' => __( 'Support is not available at the moment.', 'fswa' ) ], 503 );
 		}
 
-		$user       = wp_get_current_user();
-		$safe_body  = wp_kses_post( nl2br( $body ) );
+		$safe_body = wp_kses_post( nl2br( $body ) );
 
-		$result = $api->create_conversation(
-			$mailbox_id,
-			$subject,
-			$safe_body,
-			$user->user_email,
-			$user->first_name,
-			$user->last_name
-		);
+		if ( is_user_logged_in() ) {
+			// Logged-in: use WordPress account details and redirect to the new ticket.
+			$user  = wp_get_current_user();
+			$email = $user->user_email;
+			$first = $user->first_name;
+			$last  = $user->last_name;
 
-		if ( is_wp_error( $result ) ) {
-			wp_send_json_error( [ 'message' => $result->get_error_message() ], 500 );
+			$result = $api->create_conversation( $mailbox_id, $subject, $safe_body, $email, $first, $last );
+			if ( is_wp_error( $result ) ) {
+				wp_send_json_error( [ 'message' => $result->get_error_message() ], 500 );
+			}
+
+			$new_id   = (int) ( $result['id'] ?? 0 );
+			$redirect = $new_id
+				? wc_get_account_endpoint_url( FSWA_MyAccount::ENDPOINT ) . $new_id . '/'
+				: wc_get_account_endpoint_url( FSWA_MyAccount::ENDPOINT );
+
+			wp_send_json_success( [
+				'message'  => __( 'Your ticket has been created.', 'fswa' ),
+				'redirect' => $redirect,
+			] );
+
+		} else {
+			// Guest: require name and email from the form.
+			$guest_name  = sanitize_text_field( wp_unslash( $_POST['guest_name'] ?? '' ) );
+			$guest_email = sanitize_email( wp_unslash( $_POST['guest_email'] ?? '' ) );
+
+			if ( empty( $guest_name ) ) {
+				wp_send_json_error( [ 'message' => __( 'Please enter your name.', 'fswa' ) ], 400 );
+			}
+
+			if ( ! is_email( $guest_email ) ) {
+				wp_send_json_error( [ 'message' => __( 'Please enter a valid email address.', 'fswa' ) ], 400 );
+			}
+
+			$name_parts = explode( ' ', $guest_name, 2 );
+			$first      = $name_parts[0];
+			$last       = $name_parts[1] ?? '';
+
+			$result = $api->create_conversation( $mailbox_id, $subject, $safe_body, $guest_email, $first, $last );
+			if ( is_wp_error( $result ) ) {
+				wp_send_json_error( [ 'message' => $result->get_error_message() ], 500 );
+			}
+
+			wp_send_json_success( [
+				/* translators: %s: the guest's email address */
+				'message'  => sprintf(
+					__( "Your ticket has been submitted. We'll get back to you at %s shortly.", 'fswa' ),
+					$guest_email
+				),
+				'redirect' => '', // no My Account redirect for guests
+			] );
 		}
-
-		$new_id    = (int) ( $result['id'] ?? 0 );
-		$redirect  = $new_id
-			? wc_get_account_endpoint_url( FSWA_MyAccount::ENDPOINT ) . $new_id . '/'
-			: wc_get_account_endpoint_url( FSWA_MyAccount::ENDPOINT );
-
-		wp_send_json_success( [
-			'message'  => __( 'Your ticket has been created.', 'fswa' ),
-			'redirect' => $redirect,
-		] );
 	}
 
 	// -------------------------------------------------------------------------
@@ -190,8 +222,13 @@ class FSWA_Ajax {
 	// Helpers
 	// -------------------------------------------------------------------------
 
-	private static function verify_nonce(): void {
-		if ( ! is_user_logged_in() ) {
+	/**
+	 * Verify the AJAX nonce and, optionally, that the user is logged in.
+	 *
+	 * @param bool $require_login  Pass false to allow guest (non-logged-in) requests.
+	 */
+	private static function verify_nonce( bool $require_login = true ): void {
+		if ( $require_login && ! is_user_logged_in() ) {
 			wp_send_json_error( [ 'message' => __( 'You must be logged in.', 'fswa' ) ], 401 );
 		}
 

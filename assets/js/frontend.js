@@ -120,11 +120,14 @@
 			if ( response.success ) {
 				$ok.text( response.data.message ).show();
 
-				// Redirect to the new ticket (or list) after a short delay.
 				if ( response.data.redirect ) {
+					// Logged-in flow: redirect to the new ticket after a short delay.
 					setTimeout( function () {
 						window.location.href = response.data.redirect;
 					}, 1200 );
+				} else {
+					// Guest flow: hide the form so the ticket cannot be submitted twice.
+					$form.slideUp( 400 );
 				}
 			} else {
 				$err.text( ( response.data && response.data.message ) || fswa.i18n.replyError ).show();

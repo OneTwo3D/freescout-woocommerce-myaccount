@@ -163,14 +163,31 @@ Key class names:
 
 ## Shortcodes
 
-Four shortcodes let you embed links to the My Account pages anywhere in WordPress (pages, posts, widgets, block editor HTML blocks, etc.).
+Five shortcodes let you embed the ticket form or links to My Account pages anywhere in WordPress (pages, posts, widgets, block editor HTML blocks, etc.).
 
 | Shortcode | Attributes | Description |
 |---|---|---|
+| `[fswa_new_ticket_form]` | — | Full support ticket submission form. Works for guests **and** logged-in users. |
 | `[fswa_tickets_link]` | `text`, `class` | Renders an `<a>` link to the Support Tickets My Account page. |
 | `[fswa_kb_link]` | `text`, `class` | Renders an `<a>` link to the Knowledge Base My Account page. |
 | `[fswa_tickets_url]` | — | Outputs only the raw URL of the Support Tickets page. |
 | `[fswa_kb_url]` | — | Outputs only the raw URL of the Knowledge Base page. |
+
+### `[fswa_new_ticket_form]`
+
+Renders a complete ticket submission form directly on any WordPress page. No attributes are required.
+
+**Guest behaviour:** If the visitor is not logged in, the form shows **Name** and **Email Address** fields (both required). On success the form slides away and a confirmation is shown: *"Your ticket has been submitted. We'll get back to you at you@example.com shortly."*
+
+**Logged-in behaviour:** Name and email are taken from the WordPress account automatically. On success the user is redirected to the new ticket inside My Account.
+
+The form respects the **Allow new tickets** and **Default mailbox** settings from the plugin admin page.
+
+```
+[fswa_new_ticket_form]
+```
+
+### Link shortcodes
 
 **Attributes** (for `[fswa_tickets_link]` and `[fswa_kb_link]`):
 
@@ -241,6 +258,10 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 ---
 
 ## Changelog
+
+### 1.1.10
+- **New:** `[fswa_new_ticket_form]` shortcode — renders a full ticket submission form on any WordPress page. Guests (non-logged-in visitors) must supply their name and email address; logged-in users are identified automatically. On guest success the form slides away and a confirmation including the guest's email is shown. Logged-in users are redirected to the new ticket in My Account as usual.
+- **Fix:** Nav icon vertical alignment corrected to `vertical-align: middle` (matches WooCommerce theme convention); added `align-self: center` for flex-based themes.
 
 ### 1.1.9
 - **New:** SVG icons added to the Support Tickets and Knowledge Base entries in the My Account navigation. Icons use the same Feather icon style as the rest of the plugin (message-square for tickets, book-open for KB). Implemented via CSS `mask-image` so the icon colour automatically inherits the theme's link text colour.
