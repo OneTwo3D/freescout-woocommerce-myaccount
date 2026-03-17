@@ -3,7 +3,7 @@
  * Plugin Name: FreeScout WooCommerce My Account
  * Plugin URI:  https://github.com/OneTwo3D/freescout-woocommerce-myaccount
  * Description: Allows WooCommerce customers to read and reply to FreeScout support tickets and browse the knowledge base from within the My Account section.
- * Version:     1.1.2
+ * Version:     1.1.3
  * Author:      OneTwo3D
  * License:     GPL-2.0-or-later
  * Text Domain: fswa
@@ -15,7 +15,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'FSWA_VERSION', '1.1.2' );
+define( 'FSWA_VERSION', '1.1.3' );
 define( 'FSWA_PLUGIN_FILE', __FILE__ );
 define( 'FSWA_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FSWA_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

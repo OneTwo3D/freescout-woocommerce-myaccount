@@ -30,33 +30,17 @@
    styles, then .fswa-btn overrides colour and size so they always render
    legibly regardless of which accent colour the active theme uses.
    -------------------------------------------------------------------------- */
-.fswa-btn {
-  display: inline-block;
-  padding: 9px 20px;
-  font-size: 0.875em;
-  font-weight: 500;
-  line-height: 1.4;
-  border-radius: 4px;
-  border: 1px solid #2563eb;
-  background: #2563eb;
-  color: #fff !important;
-  text-decoration: none;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.15s, border-color 0.15s;
-}
-
+/* Ensure button text is always readable (theme colour is inherited) */
+.fswa-btn,
 .fswa-btn:hover,
 .fswa-btn:focus {
-  background: #1d4ed8;
-  border-color: #1d4ed8;
   color: #fff !important;
 }
 
 /* Compact variant used in table action cells and KB back-links */
 .fswa-btn--sm {
-  padding: 5px 12px;
-  font-size: 0.8em;
+  padding: 5px 12px !important;
+  font-size: 0.8em !important;
 }
 
 /* --------------------------------------------------------------------------
