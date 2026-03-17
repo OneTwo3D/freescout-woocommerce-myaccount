@@ -6,36 +6,39 @@
    My Account navigation – custom endpoint items
    Some WooCommerce themes apply icon-font ::before glyphs to all nav links,
    which renders as a solid block for unrecognised endpoint slugs.
-   We reset the font inheritance, hide ::after, and replace ::before with our
-   own SVG icon via CSS mask-image so it inherits the link's text colour.
+   We take over the <a> layout with flexbox so we have full control over
+   icon position and vertical alignment, regardless of whether the theme
+   uses floats, inline-block, or its own flex layout on these elements.
    -------------------------------------------------------------------------- */
 .woocommerce-MyAccount-navigation-link--support-tickets > a,
 .woocommerce-MyAccount-navigation-link--knowledge-base > a {
   color: inherit;
   font-size: inherit;
   font-family: inherit;
+  display: flex !important;
+  align-items: center !important;
 }
 
-/* Hide any trailing icon-font glyph the active theme may inject. */
+/* Suppress any ::after glyph the theme may inject. */
 .woocommerce-MyAccount-navigation-link--support-tickets > a::after,
 .woocommerce-MyAccount-navigation-link--knowledge-base > a::after {
   content: '' !important;
   display: none !important;
 }
 
-/* Shared icon setup – mask-image clips a currentColor block to the SVG
-   path so the icon always matches the surrounding link text colour.
-   vertical-align: middle matches WooCommerce theme icon-font convention.
-   align-self: center covers themes whose <a> uses display: flex. */
+/* Shared icon setup – ::before becomes a flex item.
+   order:1 + margin-left:auto pushes the icon to the far right so it
+   sits in the same position as the theme's own icon-font glyphs. */
 .woocommerce-MyAccount-navigation-link--support-tickets > a::before,
 .woocommerce-MyAccount-navigation-link--knowledge-base > a::before {
   content: '' !important;
-  display: inline-block !important;
+  display: block !important;
   width: 1.1em !important;
   height: 1.1em !important;
-  margin-right: 0.45em !important;
-  vertical-align: middle !important;
-  align-self: center !important;
+  order: 1 !important;
+  margin-left: auto !important;
+  margin-right: 0 !important;
+  flex-shrink: 0 !important;
   font-family: inherit !important;
   background-color: currentColor !important;
   -webkit-mask-repeat: no-repeat !important;
