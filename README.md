@@ -1,6 +1,6 @@
 # FreeScout WooCommerce My Account
 
-A WordPress plugin that lets WooCommerce customers read and reply to [FreeScout](https://freescout.net/) support tickets directly from the **My Account** section of your store — no separate helpdesk login required.
+A WordPress plugin that lets WooCommerce customers read and reply to [FreeScout](https://freescout.net/) support tickets **and browse the knowledge base** directly from the **My Account** section of your store — no separate helpdesk login required.
 
 ---
 
@@ -12,6 +12,7 @@ A WordPress plugin that lets WooCommerce customers read and reply to [FreeScout]
 | PHP | 7.4 |
 | WooCommerce | 7.0 |
 | FreeScout | Any version with REST API enabled |
+| FreeScout Docs module | Required for the Knowledge Base feature (optional) |
 
 ---
 
@@ -21,8 +22,9 @@ A WordPress plugin that lets WooCommerce customers read and reply to [FreeScout]
 2. Activate the plugin from **WordPress Admin → Plugins**.
 3. Go to **WooCommerce → FreeScout** and enter your API credentials (see [Configuration](#configuration)).
 4. Visit **My Account → Support Tickets** as a logged-in customer to verify everything works.
+5. *(Optional)* Enable the Knowledge Base tab and install the FreeScout Docs module on your FreeScout instance.
 
-> **Tip:** If the "Support Tickets" menu item does not appear after activation, go to **Settings → Permalinks** and click **Save Changes** to flush rewrite rules.
+> **Tip:** If a My Account tab does not appear after activation, go to **Settings → Permalinks** and click **Save Changes** to flush rewrite rules.
 
 ---
 
@@ -53,6 +55,15 @@ Use the **Test API Connection** button to confirm the credentials are valid. A s
 |---|---|
 | **Default Mailbox ID** | Numeric ID of the FreeScout mailbox that new tickets are sent to. Leave blank to show a department selector to the customer. Find the mailbox ID in FreeScout under **Manage → Mailboxes**. |
 
+### Knowledge Base
+
+| Setting | Default | Description |
+|---|---|---|
+| **Enable Knowledge Base** | Enabled | Shows a **Knowledge Base** tab in My Account. Requires the FreeScout Docs module. |
+| **KB Menu Label** | `Knowledge Base` | Text shown in the My Account navigation menu for the KB tab. |
+| **Articles Per Page** | `15` | Number of articles shown per page in category and search views (1–50). |
+| **Search Bar** | Enabled | Displays a search bar at the top of the KB home page with live autocomplete. |
+
 ---
 
 ## Features
@@ -69,9 +80,20 @@ An in-page reply form is shown below the thread for any open ticket. Replies are
 ### New ticket
 When enabled, customers can open a new ticket by clicking **+ New Ticket**. They enter a subject and message, and optionally choose a department (mailbox). On success they are redirected to the newly created ticket.
 
+### Knowledge Base
+Customers can browse a full knowledge base powered by the [FreeScout Docs module](https://freescout.net/module/docs/):
+
+- **Home** — a card grid of all KB categories, each showing its name, description, and article count.
+- **Category** — a paginated list of articles within a selected category.
+- **Article** — the full article body with breadcrumb navigation back to the category. A "Still need help? Open a ticket" link is shown when new tickets are enabled.
+- **Search** — a keyword search across all articles, with a live-autocomplete dropdown that fires as the customer types (results appear after 2 characters, keyboard-navigable).
+
+The KB tab is independent of the ticket feature and can be enabled/disabled separately. If the Docs module is not installed, the tab shows a friendly message instead of an error.
+
 ### Security
 - All AJAX actions require the user to be logged in and validate a WordPress nonce.
 - Ticket detail and reply actions verify that the requested conversation's email address matches the logged-in customer's email — customers cannot view or reply to other customers' tickets.
+- Knowledge Base content is read-only and publicly sourced from FreeScout; no customer-specific data is exposed.
 
 ---
 
@@ -91,6 +113,10 @@ Available templates:
 | `templates/myaccount/tickets-empty.php` | Empty state (no tickets found) |
 | `templates/myaccount/ticket-detail.php` | Single ticket / conversation thread |
 | `templates/myaccount/ticket-new.php` | New ticket form |
+| `templates/myaccount/kb-home.php` | Knowledge Base home (category grid) |
+| `templates/myaccount/kb-category.php` | Category article list |
+| `templates/myaccount/kb-article.php` | Single article view |
+| `templates/myaccount/kb-search.php` | Search results |
 
 ---
 
@@ -118,6 +144,13 @@ Key class names:
 | `.fswa-reply-form` | Reply form wrapper |
 | `.fswa-new-ticket` | New ticket form wrapper |
 | `.fswa-notice` | Inline notice (modifier `--success`, `--error`, `--info`, `--warning`) |
+| `.fswa-kb` | Knowledge Base page wrapper |
+| `.fswa-kb-categories` | Category card grid |
+| `.fswa-kb-category-card` | Single category card |
+| `.fswa-kb-search` | Search bar wrapper |
+| `.fswa-kb-search__suggestions` | Autocomplete dropdown |
+| `.fswa-kb-article-list` | Article list (category / search views) |
+| `.fswa-kb-article__body` | Article content area |
 
 ---
 
@@ -155,9 +188,24 @@ Yes, as long as the WordPress server can reach your FreeScout URL over HTTP/HTTP
 **Is TLS/HTTPS required?**
 Not strictly, but strongly recommended. API keys are transmitted in request headers, so an unencrypted connection would expose them.
 
+**The Knowledge Base tab shows "The knowledge base is not available. Please ensure the FreeScout Docs module is installed and enabled."**
+Install the [FreeScout Docs module](https://freescout.net/module/docs/) on your FreeScout instance and ensure it is enabled. The plugin detects when the Docs API endpoint returns a 404 and shows this message.
+
+**The KB search autocomplete does not appear.**
+Autocomplete requires at least 2 characters. Also verify the **Search Bar** option is enabled in **WooCommerce → FreeScout → Knowledge Base** and that JavaScript is not blocked on your site.
+
 ---
 
 ## Changelog
+
+### 1.1.0
+- Knowledge Base integration powered by the FreeScout Docs module.
+  - Category card grid on KB home page.
+  - Paginated article lists per category.
+  - Full article view with breadcrumb navigation.
+  - Full-page keyword search with paginated results.
+  - Live-search autocomplete with keyboard navigation.
+- New admin settings: KB enable/disable, menu label, articles per page, search bar toggle.
 
 ### 1.0.0
 - Initial release.

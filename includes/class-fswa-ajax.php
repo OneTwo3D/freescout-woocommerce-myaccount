@@ -1,10 +1,11 @@
 <?php
 /**
- * AJAX handlers for frontend ticket actions.
+ * AJAX handlers for frontend ticket and knowledge base actions.
  *
  * Handles:
  *  - Posting a reply to an existing conversation.
  *  - Creating a new conversation (ticket).
+ *  - Live-searching the knowledge base.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -14,6 +15,7 @@ class FSWA_Ajax {
 	public static function init(): void {
 		add_action( 'wp_ajax_fswa_post_reply',       [ __CLASS__, 'post_reply' ] );
 		add_action( 'wp_ajax_fswa_create_ticket',    [ __CLASS__, 'create_ticket' ] );
+		add_action( 'wp_ajax_fswa_kb_search',        [ __CLASS__, 'kb_search' ] );
 	}
 
 	// -------------------------------------------------------------------------
@@ -134,6 +136,54 @@ class FSWA_Ajax {
 			'message'  => __( 'Your ticket has been created.', 'fswa' ),
 			'redirect' => $redirect,
 		] );
+	}
+
+	// -------------------------------------------------------------------------
+	// Knowledge Base live search
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Return up to 8 KB article suggestions matching a short query string.
+	 * Used by the live-search autocomplete on the KB search bar.
+	 */
+	public static function kb_search(): void {
+		self::verify_nonce();
+
+		if ( ! get_option( 'fswa_kb_enabled', 1 ) ) {
+			wp_send_json_error( [ 'message' => __( 'Knowledge base is not available.', 'fswa' ) ], 403 );
+		}
+
+		$query = sanitize_text_field( wp_unslash( $_POST['query'] ?? '' ) );
+		if ( mb_strlen( $query ) < 2 ) {
+			wp_send_json_success( [ 'articles' => [] ] );
+		}
+
+		$api = FSWA_API::from_options();
+		if ( ! $api ) {
+			wp_send_json_error( [ 'message' => __( 'Knowledge base is not available at the moment.', 'fswa' ) ], 503 );
+		}
+
+		$result = $api->get_kb_articles( 0, $query, 1, 8 );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( [ 'message' => $result->get_error_message() ], 500 );
+		}
+
+		$raw      = $result['_embedded']['articles'] ?? [];
+		$articles = [];
+
+		foreach ( $raw as $article ) {
+			$id    = (int) ( $article['id'] ?? 0 );
+			$title = sanitize_text_field( $article['name'] ?? $article['title'] ?? '' );
+			if ( $id && $title ) {
+				$articles[] = [
+					'id'    => $id,
+					'title' => $title,
+					'url'   => FSWA_KnowledgeBase::article_url( $id ),
+				];
+			}
+		}
+
+		wp_send_json_success( [ 'articles' => $articles ] );
 	}
 
 	// -------------------------------------------------------------------------

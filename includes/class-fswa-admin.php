@@ -133,6 +133,83 @@ class FSWA_Admin {
 			'absint',
 			__( 'Leave blank to show a mailbox selector to the customer.', 'fswa' )
 		);
+
+		// ------------------------------------------------------------------ //
+		// Section: Knowledge Base
+		// ------------------------------------------------------------------ //
+		add_settings_section(
+			'fswa_kb',
+			__( 'Knowledge Base', 'fswa' ),
+			function () {
+				echo '<p>' . esc_html__( 'Expose the FreeScout Docs knowledge base inside My Account. Requires the FreeScout Docs module to be installed.', 'fswa' ) . '</p>';
+			},
+			'fswa-settings'
+		);
+
+		register_setting( 'fswa-settings', 'fswa_kb_enabled', [
+			'type'              => 'boolean',
+			'default'           => 1,
+			'sanitize_callback' => 'absint',
+		] );
+		add_settings_field(
+			'fswa_kb_enabled',
+			__( 'Enable Knowledge Base', 'fswa' ),
+			function () {
+				$checked = get_option( 'fswa_kb_enabled', 1 );
+				echo '<label>';
+				echo '<input type="checkbox" name="fswa_kb_enabled" value="1" ' . checked( 1, $checked, false ) . '>';
+				echo ' ' . esc_html__( 'Show a Knowledge Base tab in My Account', 'fswa' );
+				echo '</label>';
+			},
+			'fswa-settings',
+			'fswa_kb'
+		);
+
+		self::register_field(
+			'fswa_kb_menu_label',
+			__( 'KB Menu Label', 'fswa' ),
+			'fswa_kb',
+			'text',
+			__( 'Knowledge Base', 'fswa' ),
+			'sanitize_text_field'
+		);
+
+		register_setting( 'fswa-settings', 'fswa_kb_per_page', [
+			'type'              => 'integer',
+			'default'           => 15,
+			'sanitize_callback' => function ( $v ) {
+				return max( 1, min( 50, (int) $v ) );
+			},
+		] );
+		add_settings_field(
+			'fswa_kb_per_page',
+			__( 'Articles Per Page', 'fswa' ),
+			function () {
+				$value = (int) get_option( 'fswa_kb_per_page', 15 );
+				echo '<input type="number" name="fswa_kb_per_page" value="' . esc_attr( $value ) . '" min="1" max="50" class="small-text">';
+			},
+			'fswa-settings',
+			'fswa_kb'
+		);
+
+		register_setting( 'fswa-settings', 'fswa_kb_show_search', [
+			'type'              => 'boolean',
+			'default'           => 1,
+			'sanitize_callback' => 'absint',
+		] );
+		add_settings_field(
+			'fswa_kb_show_search',
+			__( 'Search Bar', 'fswa' ),
+			function () {
+				$checked = get_option( 'fswa_kb_show_search', 1 );
+				echo '<label>';
+				echo '<input type="checkbox" name="fswa_kb_show_search" value="1" ' . checked( 1, $checked, false ) . '>';
+				echo ' ' . esc_html__( 'Show a search bar at the top of the knowledge base', 'fswa' );
+				echo '</label>';
+			},
+			'fswa-settings',
+			'fswa_kb'
+		);
 	}
 
 	// -------------------------------------------------------------------------

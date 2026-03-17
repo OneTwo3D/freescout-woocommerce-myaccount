@@ -137,6 +137,108 @@
 	} );
 
 	// -------------------------------------------------------------------------
+	// -------------------------------------------------------------------------
+	// Knowledge Base live-search autocomplete
+	// -------------------------------------------------------------------------
+	var kbSearchTimer = null;
+	var kbActiveIndex = -1;
+
+	$( document ).on( 'input', '#fswa-kb-search-input', function () {
+		var $input       = $( this );
+		var $suggestions = $( '#fswa-kb-suggestions' );
+		var query        = $.trim( $input.val() );
+
+		clearTimeout( kbSearchTimer );
+		kbActiveIndex = -1;
+
+		if ( query.length < 2 ) {
+			hideSuggestions( $suggestions );
+			return;
+		}
+
+		kbSearchTimer = setTimeout( function () {
+			$.ajax( {
+				url     : fswa.ajaxUrl,
+				type    : 'POST',
+				dataType: 'json',
+				data    : {
+					action : 'fswa_kb_search',
+					nonce  : fswa.nonce,
+					query  : query,
+				},
+			} ).done( function ( response ) {
+				if ( ! response.success || ! response.data.articles.length ) {
+					hideSuggestions( $suggestions );
+					return;
+				}
+
+				var items = '';
+				$.each( response.data.articles, function ( i, article ) {
+					items += '<li class="fswa-kb-search__suggestion" role="option" id="fswa-kb-suggestion-' + i + '">'
+						+ '<a href="' + escHtml( article.url ) + '">'
+						+ '<svg class="fswa-kb-search__suggestion-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
+						+ escHtml( article.title )
+						+ '</a></li>';
+				} );
+
+				$suggestions.html( items ).removeAttr( 'hidden' );
+				$input.attr( 'aria-expanded', 'true' );
+			} ).fail( function () {
+				hideSuggestions( $suggestions );
+			} );
+		}, 280 );
+	} );
+
+	// Keyboard navigation within suggestions.
+	$( document ).on( 'keydown', '#fswa-kb-search-input', function ( e ) {
+		var $suggestions = $( '#fswa-kb-suggestions' );
+		var $items       = $suggestions.find( '.fswa-kb-search__suggestion' );
+		var count        = $items.length;
+
+		if ( ! count ) {
+			return;
+		}
+
+		if ( e.key === 'ArrowDown' ) {
+			e.preventDefault();
+			kbActiveIndex = ( kbActiveIndex + 1 ) % count;
+			updateActiveSuggestion( $items );
+		} else if ( e.key === 'ArrowUp' ) {
+			e.preventDefault();
+			kbActiveIndex = ( kbActiveIndex - 1 + count ) % count;
+			updateActiveSuggestion( $items );
+		} else if ( e.key === 'Enter' && kbActiveIndex >= 0 ) {
+			e.preventDefault();
+			var href = $items.eq( kbActiveIndex ).find( 'a' ).attr( 'href' );
+			if ( href ) {
+				window.location.href = href;
+			}
+		} else if ( e.key === 'Escape' ) {
+			hideSuggestions( $suggestions );
+		}
+	} );
+
+	// Close suggestions on outside click.
+	$( document ).on( 'click', function ( e ) {
+		if ( ! $( e.target ).closest( '#fswa-kb-search-wrap, .fswa-kb-search' ).length ) {
+			hideSuggestions( $( '#fswa-kb-suggestions' ) );
+		}
+	} );
+
+	function hideSuggestions( $list ) {
+		$list.attr( 'hidden', '' ).empty();
+		$( '#fswa-kb-search-input' ).removeAttr( 'aria-expanded' );
+		kbActiveIndex = -1;
+	}
+
+	function updateActiveSuggestion( $items ) {
+		$items.removeClass( 'fswa-kb-search__suggestion--active' );
+		if ( kbActiveIndex >= 0 ) {
+			$items.eq( kbActiveIndex ).addClass( 'fswa-kb-search__suggestion--active' );
+		}
+	}
+
+	// -------------------------------------------------------------------------
 	// Helpers
 	// -------------------------------------------------------------------------
 	function escHtml( str ) {

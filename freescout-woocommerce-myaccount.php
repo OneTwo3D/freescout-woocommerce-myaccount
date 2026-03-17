@@ -2,7 +2,7 @@
 /**
  * Plugin Name: FreeScout WooCommerce My Account
  * Plugin URI:  https://github.com/OneTwo3D/freescout-woocommerce-myaccount
- * Description: Allows WooCommerce customers to read and reply to FreeScout support tickets from within the My Account section.
+ * Description: Allows WooCommerce customers to read and reply to FreeScout support tickets and browse the knowledge base from within the My Account section.
  * Version:     1.0.0
  * Author:      OneTwo3D
  * License:     GPL-2.0-or-later
@@ -38,10 +38,12 @@ function fswa_init() {
 	require_once FSWA_PLUGIN_DIR . 'includes/class-fswa-admin.php';
 	require_once FSWA_PLUGIN_DIR . 'includes/class-fswa-ajax.php';
 	require_once FSWA_PLUGIN_DIR . 'includes/class-fswa-myaccount.php';
+	require_once FSWA_PLUGIN_DIR . 'includes/class-fswa-knowledgebase.php';
 
 	FSWA_Admin::init();
 	FSWA_Ajax::init();
 	FSWA_MyAccount::init();
+	FSWA_KnowledgeBase::init();
 }
 
 /**
@@ -49,8 +51,9 @@ function fswa_init() {
  */
 register_activation_hook( __FILE__, 'fswa_activate' );
 function fswa_activate() {
-	// Register endpoint first, then flush.
+	// Register endpoints first, then flush.
 	add_rewrite_endpoint( 'support-tickets', EP_ROOT | EP_PAGES );
+	add_rewrite_endpoint( 'knowledge-base', EP_ROOT | EP_PAGES );
 	flush_rewrite_rules();
 }
 

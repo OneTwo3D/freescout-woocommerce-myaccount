@@ -184,6 +184,67 @@ class FSWA_API {
 	}
 
 	// -------------------------------------------------------------------------
+	// Knowledge Base (Docs module)
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Return all knowledge base categories.
+	 *
+	 * Requires the FreeScout Docs module to be installed.
+	 *
+	 * @return array|WP_Error
+	 */
+	public function get_kb_categories() {
+		return $this->get( '/api/docs/categories' );
+	}
+
+	/**
+	 * Return a single knowledge base category.
+	 *
+	 * @param  int $category_id
+	 * @return array|WP_Error
+	 */
+	public function get_kb_category( int $category_id ) {
+		return $this->get( '/api/docs/categories/' . $category_id );
+	}
+
+	/**
+	 * Return a paginated list of knowledge base articles.
+	 *
+	 * @param  int    $category_id  Filter by category (0 = all categories).
+	 * @param  string $search       Optional search term.
+	 * @param  int    $page         1-based page number.
+	 * @param  int    $per_page     Items per page.
+	 * @return array|WP_Error
+	 */
+	public function get_kb_articles( int $category_id = 0, string $search = '', int $page = 1, int $per_page = 20 ) {
+		$params = [
+			'page'     => $page,
+			'pageSize' => min( $per_page, 50 ),
+		];
+
+		if ( $category_id ) {
+			$params['categoryId'] = $category_id;
+		}
+
+		if ( '' !== $search ) {
+			$params['search'] = $search;
+		}
+
+		return $this->get( '/api/docs/articles', $params );
+	}
+
+	/**
+	 * Return a single knowledge base article.
+	 *
+	 * @param  int $article_id
+	 * @return array|WP_Error
+	 */
+	public function get_kb_article( int $article_id ) {
+		return $this->get( '/api/docs/articles/' . $article_id );
+	}
+
+	// -------------------------------------------------------------------------
 	// HTTP helpers
 	// -------------------------------------------------------------------------
 
