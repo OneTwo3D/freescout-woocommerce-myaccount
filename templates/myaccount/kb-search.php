@@ -33,7 +33,7 @@ defined( 'ABSPATH' ) || exit;
 			<div class="fswa-kb-search__input-wrap">
 				<input
 					type="search"
-					name="s"
+					name="fswa_q"
 					id="fswa-kb-search-input"
 					class="fswa-kb-search__input"
 					value="<?php echo esc_attr( $query ); ?>"

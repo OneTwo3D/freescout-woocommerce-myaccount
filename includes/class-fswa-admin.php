@@ -384,6 +384,7 @@ class FSWA_Admin {
 							<select id="fswa_kb_debug_endpoint" name="fswa_kb_debug_endpoint">
 								<option value="categories"><?php esc_html_e( 'GET /categories — list all categories', 'fswa' ); ?></option>
 								<option value="category"><?php esc_html_e( 'GET /categories/{id} — articles in one category (enter ID below)', 'fswa' ); ?></option>
+								<option value="article"><?php esc_html_e( 'GET /articles/{id} — single article by ID (enter ID below)', 'fswa' ); ?></option>
 								<option value="search"><?php esc_html_e( 'GET /search?q={term} — search (enter term below)', 'fswa' ); ?></option>
 							</select>
 						</td>
@@ -439,6 +440,17 @@ class FSWA_Admin {
 				}
 				$result = $api->get_kb_category( $mailbox_id, $cat_id );
 				$label  = "/api/knowledgebase/{$mailbox_id}/categories/{$cat_id}";
+				break;
+
+			case 'article':
+				$art_id = (int) $param;
+				if ( ! $art_id ) {
+					return '<div class="notice notice-error inline"><p>'
+						. esc_html__( 'Please enter an article ID.', 'fswa' )
+						. '</p></div>';
+				}
+				$result = $api->get_kb_article_direct( $mailbox_id, $art_id );
+				$label  = "/api/knowledgebase/{$mailbox_id}/articles/{$art_id}";
 				break;
 
 			case 'search':

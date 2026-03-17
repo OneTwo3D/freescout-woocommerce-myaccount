@@ -26,7 +26,7 @@ $show_search = (bool) get_option( 'fswa_kb_show_search', 1 );
 			<div class="fswa-kb-search__input-wrap">
 				<input
 					type="search"
-					name="s"
+					name="fswa_q"
 					id="fswa-kb-search-input"
 					class="fswa-kb-search__input"
 					placeholder="<?php esc_attr_e( 'Search the knowledge base…', 'fswa' ); ?>"

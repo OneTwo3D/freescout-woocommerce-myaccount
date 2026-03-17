@@ -198,6 +198,19 @@ class FSWA_KnowledgeBase {
 			}
 		}
 
+		// Fallback: if the categories-list API didn't include parent info, check
+		// whether the category endpoint itself embeds its children/subcategories.
+		if ( empty( $subcategories ) ) {
+			$embedded = $data['children']
+				?? $data['subcategories']
+				?? $data['subCategories']
+				?? ( null !== $category ? ( $category['children'] ?? $category['subcategories'] ?? null ) : null )
+				?? [];
+			if ( ! empty( $embedded ) && is_array( $embedded ) ) {
+				$subcategories = array_values( $embedded );
+			}
+		}
+
 		// The KB module API does not paginate category articles.
 		$page        = 1;
 		$total_pages = 1;
@@ -223,7 +236,11 @@ class FSWA_KnowledgeBase {
 		$result = $api->get_kb_article_direct( $mailbox_id, $article_id );
 
 		if ( ! is_wp_error( $result ) ) {
-			$article     = self::unwrap( $result );
+			$data = self::unwrap( $result );
+			// Some modules nest the article under an 'article' key.
+			$article     = ( isset( $data['article'] ) && is_array( $data['article'] ) )
+				? $data['article']
+				: $data;
 			$category_id = 0;
 			$category    = null;
 		} else {
@@ -287,7 +304,11 @@ class FSWA_KnowledgeBase {
 		$article_result = $api->get_kb_article( $mailbox_id, $category_id, $article_id );
 
 		if ( ! is_wp_error( $article_result ) ) {
-			$article = self::unwrap( $article_result );
+			$data    = self::unwrap( $article_result );
+			// Some modules nest the article under an 'article' key.
+			$article = ( isset( $data['article'] ) && is_array( $data['article'] ) )
+				? $data['article']
+				: $data;
 		} else {
 			// Fall back: load the category and find the article in the list.
 			// This is compatible with the jtorvald module (2-endpoint version).
@@ -343,7 +364,9 @@ class FSWA_KnowledgeBase {
 	}
 
 	private static function render_search( FSWA_API $api, int $mailbox_id ): void {
-		$query    = sanitize_text_field( wp_unslash( $_GET['s'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification
+		// Use 'fswa_q' instead of WordPress's built-in 's' to avoid redirect_canonical()
+		// treating KB search pages as WordPress blog-search pages and redirecting away.
+		$query    = sanitize_text_field( wp_unslash( $_GET['fswa_q'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification
 		$articles = [];
 
 		if ( '' !== $query ) {
@@ -392,13 +415,18 @@ class FSWA_KnowledgeBase {
 	 * @return int  Parent category ID, or 0.
 	 */
 	private static function get_parent_id( array $category ): int {
-		if ( isset( $category['parentId'] ) ) {
-			return (int) $category['parentId'];
+		// Use array_key_exists (not isset) so that explicit null values —
+		// which some API modules use for root categories — are treated as 0.
+		foreach ( [ 'parentId', 'parent_id', 'parentCategoryId', 'parent_category_id' ] as $key ) {
+			if ( array_key_exists( $key, $category ) ) {
+				$val = $category[ $key ];
+				if ( is_array( $val ) ) {
+					return (int) ( $val['id'] ?? 0 );
+				}
+				return (int) $val; // null → 0, integer → integer
+			}
 		}
-		if ( isset( $category['parent_id'] ) ) {
-			return (int) $category['parent_id'];
-		}
-		if ( isset( $category['parent'] ) ) {
+		if ( array_key_exists( 'parent', $category ) ) {
 			$parent = $category['parent'];
 			if ( is_array( $parent ) ) {
 				return (int) ( $parent['id'] ?? 0 );
@@ -515,10 +543,10 @@ class FSWA_KnowledgeBase {
 	public static function search_url( string $query = '' ): string {
 		if ( null !== self::$shortcode_base ) {
 			$base = add_query_arg( 'fswa_kb', 'search', self::$shortcode_base );
-			return $query ? add_query_arg( 's', rawurlencode( $query ), $base ) : $base;
+			return $query ? add_query_arg( 'fswa_q', $query, $base ) : $base;
 		}
 		$base = wc_get_account_endpoint_url( self::ENDPOINT ) . 'search/';
-		return $query ? add_query_arg( 's', rawurlencode( $query ), $base ) : $base;
+		return $query ? add_query_arg( 'fswa_q', $query, $base ) : $base;
 	}
 
 	/**
