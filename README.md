@@ -287,6 +287,7 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 - **Fix:** KB articles were not rendering when the API wraps each article inside an extra `article` key (`{"article": {...}}`). The article extraction logic now unwraps this envelope before reading title, body, and related fields.
 - **New:** KB search result extraction now checks additional top-level keys (`results`, `hits`, `items`) in addition to `articles` and `docs`, improving compatibility with more API module versions.
 - **New:** **Category Hierarchy** setting (WooCommerce → FreeScout → Knowledge Base). The EcomGraduates KB API module returns a flat category list with no parent/child information. This new textarea field lets you define the hierarchy manually (`parent_id:child_id,child_id,...`, one parent per line). Child categories are automatically hidden from the KB home page and shown as subcategories when their parent category is opened.
+- **Fix:** Category hierarchy mapping was ignored when the API returned a `parentId` (or similar) field set to `null` or `0`. The parent-ID lookup now falls through to the manual hierarchy map whenever the API field is absent or zero, so configured subcategories are correctly hidden from the home page and shown under their parent.
 - **New:** Inline admin debug panel on the KB search results page (visible to shop managers only, collapsed by default) that displays the raw API response when a search returns no results — aids diagnosing API compatibility issues without leaving the frontend.
 
 ### 1.1.23

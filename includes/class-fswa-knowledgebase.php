@@ -435,27 +435,30 @@ class FSWA_KnowledgeBase {
 	 * @return int  Parent category ID, or 0.
 	 */
 	private static function get_parent_id( array $category ): int {
-		// Use array_key_exists (not isset) so that explicit null values —
-		// which some API modules use for root categories — are treated as 0.
+		// Check well-known API parent fields. Only trust the value when it is
+		// non-zero — a zero/null means the API returned no real parent info, so
+		// we still fall through to the manually configured hierarchy map.
 		foreach ( [ 'parentId', 'parent_id', 'parentCategoryId', 'parent_category_id' ] as $key ) {
 			if ( array_key_exists( $key, $category ) ) {
-				$val = $category[ $key ];
-				if ( is_array( $val ) ) {
-					return (int) ( $val['id'] ?? 0 );
+				$val       = $category[ $key ];
+				$parent_id = is_array( $val ) ? (int) ( $val['id'] ?? 0 ) : (int) $val;
+				if ( $parent_id !== 0 ) {
+					return $parent_id;
 				}
-				return (int) $val; // null → 0, integer → integer
+				break; // Field exists but is 0/null — skip remaining keys, check manual map.
 			}
 		}
 		if ( array_key_exists( 'parent', $category ) ) {
-			$parent = $category['parent'];
-			if ( is_array( $parent ) ) {
-				return (int) ( $parent['id'] ?? 0 );
+			$parent    = $category['parent'];
+			$parent_id = is_array( $parent ) ? (int) ( $parent['id'] ?? 0 ) : (int) $parent;
+			if ( $parent_id !== 0 ) {
+				return $parent_id;
 			}
-			return (int) $parent;
 		}
 
 		// Fallback: check the manually configured category hierarchy.
-		// This is required when the API returns a flat list with no parent info.
+		// This is required when the API returns a flat list with no parent info,
+		// or when it returns parentId: null for every category.
 		$cat_id = (int) ( $category['id'] ?? 0 );
 		if ( $cat_id ) {
 			$maps = self::hierarchy_maps();
