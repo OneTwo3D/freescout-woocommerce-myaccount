@@ -70,7 +70,7 @@ $show_mailbox_sel  = empty( $default_mailbox ) && ! empty( $mailboxes );
 			></textarea>
 		</div>
 
-		<button type="submit" class="button button-primary fswa-btn-submit" id="fswa-new-ticket-submit">
+		<button type="submit" class="button fswa-btn fswa-btn-submit" id="fswa-new-ticket-submit">
 			<?php esc_html_e( 'Submit Ticket', 'fswa' ); ?>
 		</button>
 	</form>

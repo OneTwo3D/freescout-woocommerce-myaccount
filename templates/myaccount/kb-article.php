@@ -55,17 +55,17 @@ $updated  = ! empty( $article['updatedAt'] )
 	<!-- Footer navigation -->
 	<footer class="fswa-kb-article__footer">
 		<?php if ( $category_id ) : ?>
-			<a href="<?php echo esc_url( FSWA_KnowledgeBase::category_url( $category_id ) ); ?>" class="button">
+			<a href="<?php echo esc_url( FSWA_KnowledgeBase::category_url( $category_id ) ); ?>" class="button fswa-btn fswa-btn--sm">
 				&larr; <?php echo $cat_name ? esc_html( $cat_name ) : esc_html__( 'Back to category', 'fswa' ); ?>
 			</a>
 		<?php else : ?>
-			<a href="<?php echo esc_url( FSWA_KnowledgeBase::home_url() ); ?>" class="button">
+			<a href="<?php echo esc_url( FSWA_KnowledgeBase::home_url() ); ?>" class="button fswa-btn fswa-btn--sm">
 				&larr; <?php esc_html_e( 'Back to Knowledge Base', 'fswa' ); ?>
 			</a>
 		<?php endif; ?>
 
 		<?php if ( get_option( 'fswa_allow_new_tickets', 1 ) ) : ?>
-			<a href="<?php echo esc_url( wc_get_account_endpoint_url( FSWA_MyAccount::ENDPOINT ) . 'new/' ); ?>" class="button fswa-kb-article__contact-btn">
+			<a href="<?php echo esc_url( wc_get_account_endpoint_url( FSWA_MyAccount::ENDPOINT ) . 'new/' ); ?>" class="button fswa-btn fswa-kb-article__contact-btn">
 				<?php esc_html_e( 'Still need help? Open a ticket', 'fswa' ); ?>
 			</a>
 		<?php endif; ?>

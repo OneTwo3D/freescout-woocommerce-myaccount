@@ -21,7 +21,7 @@ defined( 'ABSPATH' ) || exit;
 	<div class="fswa-tickets__header">
 		<h2 class="fswa-tickets__title"><?php esc_html_e( 'Your Support Tickets', 'fswa' ); ?></h2>
 		<?php if ( get_option( 'fswa_allow_new_tickets', 1 ) ) : ?>
-			<a href="<?php echo esc_url( wc_get_account_endpoint_url( FSWA_MyAccount::ENDPOINT ) . 'new/' ); ?>" class="button fswa-btn-new-ticket">
+			<a href="<?php echo esc_url( wc_get_account_endpoint_url( FSWA_MyAccount::ENDPOINT ) . 'new/' ); ?>" class="button fswa-btn fswa-btn-new-ticket">
 				<?php esc_html_e( '+ New Ticket', 'fswa' ); ?>
 			</a>
 		<?php endif; ?>
@@ -71,7 +71,7 @@ defined( 'ABSPATH' ) || exit;
 						<?php echo esc_html( $updated ); ?>
 					</td>
 					<td class="fswa-col-action">
-						<a href="<?php echo esc_url( $detail_url ); ?>" class="button">
+						<a href="<?php echo esc_url( $detail_url ); ?>" class="button fswa-btn fswa-btn--sm">
 							<?php esc_html_e( 'View', 'fswa' ); ?>
 						</a>
 					</td>

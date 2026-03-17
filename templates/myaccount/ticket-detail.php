@@ -101,7 +101,7 @@ $is_closed  = in_array( strtolower( $conversation['status'] ?? '' ), [ 'closed',
 				></textarea>
 			</div>
 
-			<button type="submit" class="button button-primary fswa-btn-submit" id="fswa-reply-submit">
+			<button type="submit" class="button fswa-btn fswa-btn-submit" id="fswa-reply-submit">
 				<?php esc_html_e( 'Send Reply', 'fswa' ); ?>
 			</button>
 		</form>
