@@ -567,10 +567,31 @@ class FSWA_KnowledgeBase {
 			echo '<p class="fswa-notice fswa-notice--warning">'
 				. esc_html__( 'The knowledge base API returned "Method Not Allowed" (405). Please verify the KB Mailbox ID setting and ensure a compatible Knowledge Base API module is active in FreeScout.', 'fswa' )
 				. '</p>';
-		} else {
+		} elseif ( 500 === $status ) {
+			// A 500 is often a database error (e.g. missing column after a
+			// module update whose migration has not been run yet).
+			// Show a generic message to regular users; give admins the detail.
 			echo '<p class="fswa-notice fswa-notice--error">'
-				. esc_html( $error->get_error_message() )
+				. esc_html__( 'The knowledge base is temporarily unavailable. Please try again later.', 'fswa' )
 				. '</p>';
+			if ( current_user_can( 'manage_woocommerce' ) ) {
+				echo '<p class="fswa-notice fswa-notice--warning" style="font-size:12px;">'
+					. esc_html__( 'Admin info: FreeScout returned a 500 error. If you recently updated the KnowledgeBaseApiModule, run: php artisan module:migrate KnowledgeBaseApiModule', 'fswa' )
+					. '<br><code>' . esc_html( $error->get_error_message() ) . '</code>'
+					. '</p>';
+			}
+		} else {
+			// For other unexpected errors, show the message to admins only;
+			// regular users see a generic notice.
+			if ( current_user_can( 'manage_woocommerce' ) ) {
+				echo '<p class="fswa-notice fswa-notice--error">'
+					. esc_html( $error->get_error_message() )
+					. '</p>';
+			} else {
+				echo '<p class="fswa-notice fswa-notice--error">'
+					. esc_html__( 'The knowledge base is temporarily unavailable. Please try again later.', 'fswa' )
+					. '</p>';
+			}
 		}
 	}
 

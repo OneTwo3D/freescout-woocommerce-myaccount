@@ -282,6 +282,9 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 
 ## Changelog
 
+### 1.1.40
+- **Fix:** Raw SQL/server error messages from FreeScout are no longer shown to regular users. A 500 response (e.g. from a missing DB column after a module update without running its migration) now shows a generic "temporarily unavailable" message to customers, with the actual error detail and a migration hint shown only to admins (`manage_woocommerce`). All other unexpected API errors are similarly gated.
+
 ### 1.1.39
 - **Fix:** Search result article links now correctly resolve the category ID when the API returns it as a `categories` array (`[{id, name}]`) rather than a flat `categoryId` field. Previously these articles always fell back to the slower `art-{id}` URL scheme that requires an extra server-side API lookup.
 - **Improvement:** `render_article()` now uses the `category` object embedded in the article endpoint response (added in the updated EcomGraduates module) for the breadcrumb, eliminating a second `get_kb_categories()` call per article page load. A categories-list fallback is still made only when the article endpoint returns no category data.
