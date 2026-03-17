@@ -281,6 +281,15 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 
 ## Changelog
 
+### 1.1.17
+- **Style:** Knowledge Base category card icons now render in red (`#dc2626`) to match the KB search button.
+
+### 1.1.16
+- **Style:** KB search submit button is now solid red (`#dc2626`), full-height, with a white icon. Hover darkens to `#b91c1c`.
+
+### 1.1.15
+- **Fix:** WooCommerce My Account nav icons now use a flex layout on the `<a>` element for reliable vertical alignment across themes (replaces the `vertical-align` + `align-self` approach that broke inside flex containers).
+
 ### 1.1.13
 - **New:** `[fswa_kb]` shortcode — renders the full Knowledge Base browser (home, categories, articles, search) on any WordPress page without requiring login. Navigation uses `?fswa_kb=` query parameters. Accepts an optional `ticket_url` attribute to point the "Still need help?" button at a custom page (e.g. one containing `[fswa_new_ticket_form]`). KB live-search autocomplete also works for guests.
 
