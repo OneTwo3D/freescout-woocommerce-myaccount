@@ -281,9 +281,13 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 
 ## Changelog
 
-### 1.1.10
+### 1.1.13
 - **New:** `[fswa_kb]` shortcode — renders the full Knowledge Base browser (home, categories, articles, search) on any WordPress page without requiring login. Navigation uses `?fswa_kb=` query parameters. Accepts an optional `ticket_url` attribute to point the "Still need help?" button at a custom page (e.g. one containing `[fswa_new_ticket_form]`). KB live-search autocomplete also works for guests.
+
+### 1.1.12
 - **New:** `[fswa_new_ticket_form]` shortcode — renders a full ticket submission form on any WordPress page. Guests (non-logged-in visitors) must supply their name and email address; logged-in users are identified automatically. On guest success the form slides away and a confirmation including the guest's email is shown. Logged-in users are redirected to the new ticket in My Account as usual.
+
+### 1.1.11
 - **Fix:** Nav icon vertical alignment corrected to `vertical-align: middle` (matches WooCommerce theme convention); added `align-self: center` for flex-based themes.
 
 ### 1.1.9
