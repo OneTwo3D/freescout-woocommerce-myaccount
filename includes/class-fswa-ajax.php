@@ -197,22 +197,33 @@ class FSWA_Ajax {
 			wp_send_json_error( [ 'message' => __( 'Knowledge base is not available at the moment.', 'fswa' ) ], 503 );
 		}
 
-		$result = $api->get_kb_articles( 0, $query, 1, 8 );
+		$mailbox_id = FSWA_KnowledgeBase::get_mailbox_id();
+		$result     = $api->search_kb( $mailbox_id, $query );
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( [ 'message' => $result->get_error_message() ], 500 );
 		}
 
-		$raw      = $result['_embedded']['articles'] ?? [];
+		// Unwrap EcomGraduates {success, data} envelope or plain response.
+		$data = $result;
+		if ( isset( $result['success'] ) && array_key_exists( 'data', $result ) ) {
+			$data = (array) $result['data'];
+		}
+		$raw = $data['articles'] ?? $data['docs'] ?? ( isset( $data[0] ) ? $data : [] );
+		$raw = array_slice( $raw, 0, 8 );
+
 		$articles = [];
 
 		foreach ( $raw as $article ) {
-			$id    = (int) ( $article['id'] ?? 0 );
-			$title = sanitize_text_field( $article['name'] ?? $article['title'] ?? '' );
+			$id     = (int) ( $article['id'] ?? 0 );
+			$title  = sanitize_text_field( $article['name'] ?? $article['title'] ?? '' );
+			$cat_id = (int) ( $article['categoryId'] ?? $article['category_id'] ?? 0 );
 			if ( $id && $title ) {
 				$articles[] = [
 					'id'    => $id,
 					'title' => $title,
-					'url'   => FSWA_KnowledgeBase::article_url( $id ),
+					'url'   => $cat_id
+						? FSWA_KnowledgeBase::article_url( $cat_id, $id )
+						: FSWA_KnowledgeBase::home_url(),
 				];
 			}
 		}

@@ -146,7 +146,7 @@ class FSWA_KnowledgeBase {
 		}
 
 		$data     = self::unwrap( $result );
-		$articles = $data['articles'] ?? ( isset( $data[0] ) ? $data : [] );
+		$articles = $data['articles'] ?? $data['docs'] ?? ( isset( $data[0] ) ? $data : [] );
 
 		// Category metadata may be embedded; otherwise look it up from the list.
 		$category = $data['category'] ?? null;
@@ -191,7 +191,7 @@ class FSWA_KnowledgeBase {
 			}
 
 			$data     = self::unwrap( $cat_result );
-			$articles = $data['articles'] ?? ( isset( $data[0] ) ? $data : [] );
+			$articles = $data['articles'] ?? $data['docs'] ?? ( isset( $data[0] ) ? $data : [] );
 			$article  = null;
 
 			foreach ( $articles as $a ) {
@@ -239,7 +239,7 @@ class FSWA_KnowledgeBase {
 			$result   = $api->search_kb( $mailbox_id, $query );
 			if ( ! is_wp_error( $result ) ) {
 				$data     = self::unwrap( $result );
-				$articles = $data['articles'] ?? ( isset( $data[0] ) ? $data : [] );
+				$articles = $data['articles'] ?? $data['docs'] ?? ( isset( $data[0] ) ? $data : [] );
 			}
 		}
 

@@ -281,6 +281,11 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 
 ## Changelog
 
+### 1.1.19
+- **Fix:** KB articles were not loading for some categories because the FreeScout Docs module can return articles under the key `docs` rather than `articles`. All article extraction points now check both keys.
+- **Fix:** KB live-search AJAX handler was calling a non-existent `get_kb_articles()` API method, causing a PHP fatal error on every autocomplete request. Now correctly uses `search_kb()`.
+- **Fix:** KB live-search AJAX handler was calling `article_url()` with only one argument (article ID) instead of the required two (category ID + article ID). Article links in autocomplete suggestions now resolve correctly.
+
 ### 1.1.17
 - **Style:** Knowledge Base category card icons now render in red (`#dc2626`) to match the KB search button.
 
