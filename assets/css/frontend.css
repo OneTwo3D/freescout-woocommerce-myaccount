@@ -457,17 +457,19 @@
 
 .fswa-kb-search__btn {
   border: none;
-  background: transparent;
-  padding: 0 14px;
+  background: #dc2626;
+  padding: 0 16px;
   cursor: pointer;
-  color: #6b7280;
+  color: #fff;
   display: flex;
   align-items: center;
-  transition: color 0.15s;
+  align-self: stretch;
+  transition: background 0.15s;
 }
 
 .fswa-kb-search__btn:hover {
-  color: #2563eb;
+  background: #b91c1c;
+  color: #fff;
 }
 
 /* Autocomplete suggestions dropdown */
