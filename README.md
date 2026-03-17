@@ -65,6 +65,7 @@ Use the **Test API Connection** button to confirm the credentials are valid. A s
 | **KB Menu Label** | `Knowledge Base` | Text shown in the My Account navigation menu for the KB tab. |
 | **Articles Per Page** | `15` | Number of articles shown per page in category and search views (1–50). |
 | **Search Bar** | Enabled | Displays a search bar at the top of the KB home page with live autocomplete. |
+| **Category Hierarchy** | — | The KB API returns a flat category list with no parent/child information. Enter your hierarchy here, one parent per line: `parent_id:child_id,child_id,...`. Example: `1:2,3,9` makes categories 2, 3 and 9 appear as subcategories of category 1. Child categories are hidden from the KB home page and shown only when their parent is opened. |
 
 ---
 
@@ -280,6 +281,13 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 ---
 
 ## Changelog
+
+### 1.1.35
+- **Fix:** KB search no longer redirects to the WordPress blog search page. The search form now submits via `?fswa_q=` instead of `?s=`, which previously triggered WordPress's `redirect_canonical()` and sent users away from the KB.
+- **Fix:** KB articles were not rendering when the API wraps each article inside an extra `article` key (`{"article": {...}}`). The article extraction logic now unwraps this envelope before reading title, body, and related fields.
+- **New:** KB search result extraction now checks additional top-level keys (`results`, `hits`, `items`) in addition to `articles` and `docs`, improving compatibility with more API module versions.
+- **New:** **Category Hierarchy** setting (WooCommerce → FreeScout → Knowledge Base). The EcomGraduates KB API module returns a flat category list with no parent/child information. This new textarea field lets you define the hierarchy manually (`parent_id:child_id,child_id,...`, one parent per line). Child categories are automatically hidden from the KB home page and shown as subcategories when their parent category is opened.
+- **New:** Inline admin debug panel on the KB search results page (visible to shop managers only, collapsed by default) that displays the raw API response when a search returns no results — aids diagnosing API compatibility issues without leaving the frontend.
 
 ### 1.1.23
 - **Fix:** Articles were missing from KB category pages when the API module returns articles nested inside the category object (`data.category.articles`) rather than at the top level (`data.articles`). The extraction logic now checks both locations.
