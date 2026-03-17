@@ -294,7 +294,26 @@ class FSWA_API {
 		if ( '' !== $token ) {
 			$params['token'] = $token;
 		}
-		return $this->get( $endpoint, $params );
+
+		$url = $this->base_url . $endpoint;
+		if ( ! empty( $params ) ) {
+			$url = $url . '?' . http_build_query( $params, '', '&', PHP_QUERY_RFC3986 );
+		}
+
+		// KB endpoints authenticate via ?token= and must NOT carry the
+		// X-FreeScout-API-Key header. FreeScout's own REST API layer intercepts
+		// any request that bears that header and routes it through its own
+		// dispatcher, which has no knowledge of the KB module routes and
+		// returns 405 Method Not Allowed.
+		$args = [
+			'timeout' => $this->timeout,
+			'headers' => [
+				'Accept' => 'application/json',
+			],
+		];
+
+		$response = wp_remote_get( $url, $args );
+		return $this->parse_response( $response );
 	}
 
 	/**
