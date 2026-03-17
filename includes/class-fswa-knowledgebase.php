@@ -8,11 +8,15 @@
  *  - Article: full article body with breadcrumb navigation.
  *  - Search: article results for a keyword query.
  *
- * URL scheme (all relative to the My Account page):
- *  knowledge-base/            → KB home
- *  knowledge-base/search/     → Search results (?s=query)
- *  knowledge-base/cat-{id}/   → Category article list
- *  knowledge-base/{id}/       → Single article
+ * Requires a FreeScout Knowledge Base API module:
+ *   • jtorvald/freescout-knowledge-api
+ *   • EcomGraduates/KnowledgeBaseApiModule  (recommended — adds single-article endpoint)
+ *
+ * URL scheme (relative to the My Account page):
+ *  knowledge-base/                         → KB home
+ *  knowledge-base/search/                  → Search results (?s=query)
+ *  knowledge-base/cat-{id}/                → Category article list
+ *  knowledge-base/cat-{catId}-art-{artId}/ → Single article
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -67,16 +71,25 @@ class FSWA_KnowledgeBase {
 			return;
 		}
 
-		$value = get_query_var( self::ENDPOINT );
+		$mailbox_id = self::get_mailbox_id();
+		if ( ! $mailbox_id ) {
+			echo '<p class="fswa-notice fswa-notice--warning">'
+				. esc_html__( 'Knowledge base mailbox is not configured. Please set the KB Mailbox ID under WooCommerce → FreeScout.', 'fswa' )
+				. '</p>';
+			return;
+		}
+
+		$value = (string) get_query_var( self::ENDPOINT );
 
 		if ( 'search' === $value ) {
-			self::render_search( $api );
-		} elseif ( str_starts_with( (string) $value, 'cat-' ) ) {
-			self::render_category( (int) substr( $value, 4 ), $api );
-		} elseif ( is_numeric( $value ) && $value > 0 ) {
-			self::render_article( (int) $value, $api );
+			self::render_search( $api, $mailbox_id );
+		} elseif ( preg_match( '/^cat-(\d+)-art-(\d+)$/', $value, $m ) ) {
+			// Single article: cat-{catId}-art-{artId}
+			self::render_article( (int) $m[1], (int) $m[2], $api, $mailbox_id );
+		} elseif ( str_starts_with( $value, 'cat-' ) ) {
+			self::render_category( (int) substr( $value, 4 ), $api, $mailbox_id );
 		} else {
-			self::render_home( $api );
+			self::render_home( $api, $mailbox_id );
 		}
 	}
 
@@ -84,32 +97,47 @@ class FSWA_KnowledgeBase {
 	// Views
 	// -------------------------------------------------------------------------
 
-	private static function render_home( FSWA_API $api ): void {
-		$result = $api->get_kb_categories();
+	private static function render_home( FSWA_API $api, int $mailbox_id ): void {
+		$result = $api->get_kb_categories( $mailbox_id );
 
 		if ( is_wp_error( $result ) ) {
 			self::maybe_show_unavailable( $result );
 			return;
 		}
 
-		$categories = $result['_embedded']['categories'] ?? [];
+		$categories = self::unwrap( $result, 'categories' );
 
 		FSWA_MyAccount::load_template( 'myaccount/kb-home.php', compact( 'categories' ) );
 	}
 
-	private static function render_category( int $category_id, FSWA_API $api ): void {
-		$category = $api->get_kb_category( $category_id );
-		if ( is_wp_error( $category ) ) {
-			self::maybe_show_unavailable( $category );
+	private static function render_category( int $category_id, FSWA_API $api, int $mailbox_id ): void {
+		$result = $api->get_kb_category( $mailbox_id, $category_id );
+
+		if ( is_wp_error( $result ) ) {
+			self::maybe_show_unavailable( $result );
 			return;
 		}
 
-		$page     = max( 1, (int) ( $_GET['paged'] ?? 1 ) ); // phpcs:ignore WordPress.Security.NonceVerification
-		$per_page = (int) get_option( 'fswa_kb_per_page', 15 );
-		$articles_result = $api->get_kb_articles( $category_id, '', $page, $per_page );
+		$data     = self::unwrap( $result );
+		$articles = $data['articles'] ?? ( isset( $data[0] ) ? $data : [] );
 
-		$articles    = ! is_wp_error( $articles_result ) ? ( $articles_result['_embedded']['articles'] ?? [] ) : [];
-		$total_pages = ! is_wp_error( $articles_result ) ? (int) ( $articles_result['page']['totalPages'] ?? 1 )  : 1;
+		// Category metadata may be embedded; otherwise look it up from the list.
+		$category = $data['category'] ?? null;
+		if ( null === $category ) {
+			$cats_result = $api->get_kb_categories( $mailbox_id );
+			if ( ! is_wp_error( $cats_result ) ) {
+				foreach ( self::unwrap( $cats_result, 'categories' ) as $c ) {
+					if ( (int) ( $c['id'] ?? 0 ) === $category_id ) {
+						$category = $c;
+						break;
+					}
+				}
+			}
+		}
+
+		// The KB module API does not paginate category articles.
+		$page        = 1;
+		$total_pages = 1;
 
 		FSWA_MyAccount::load_template( 'myaccount/kb-category.php', compact(
 			'category',
@@ -120,19 +148,52 @@ class FSWA_KnowledgeBase {
 		) );
 	}
 
-	private static function render_article( int $article_id, FSWA_API $api ): void {
-		$article = $api->get_kb_article( $article_id );
-		if ( is_wp_error( $article ) ) {
-			self::maybe_show_unavailable( $article );
-			return;
+	private static function render_article( int $category_id, int $article_id, FSWA_API $api, int $mailbox_id ): void {
+		// Try the dedicated single-article endpoint (EcomGraduates module).
+		$article_result = $api->get_kb_article( $mailbox_id, $category_id, $article_id );
+
+		if ( ! is_wp_error( $article_result ) ) {
+			$article = self::unwrap( $article_result );
+		} else {
+			// Fall back: load the category and find the article in the list.
+			// This is compatible with the jtorvald module (2-endpoint version).
+			$cat_result = $api->get_kb_category( $mailbox_id, $category_id );
+			if ( is_wp_error( $cat_result ) ) {
+				self::maybe_show_unavailable( $cat_result );
+				return;
+			}
+
+			$data     = self::unwrap( $cat_result );
+			$articles = $data['articles'] ?? ( isset( $data[0] ) ? $data : [] );
+			$article  = null;
+
+			foreach ( $articles as $a ) {
+				if ( (int) ( $a['id'] ?? 0 ) === $article_id ) {
+					$article = $a;
+					break;
+				}
+			}
+
+			if ( null === $article ) {
+				echo '<p class="fswa-notice fswa-notice--error">'
+					. esc_html__( 'Article not found.', 'fswa' )
+					. '</p>';
+				return;
+			}
 		}
 
-		// Load the parent category for the breadcrumb (best-effort).
-		$category    = null;
-		$category_id = (int) ( $article['categoryId'] ?? 0 );
+		// Fetch category metadata for the breadcrumb.
+		$category = null;
 		if ( $category_id ) {
-			$cat_result = $api->get_kb_category( $category_id );
-			$category   = is_wp_error( $cat_result ) ? null : $cat_result;
+			$cats_result = $api->get_kb_categories( $mailbox_id );
+			if ( ! is_wp_error( $cats_result ) ) {
+				foreach ( self::unwrap( $cats_result, 'categories' ) as $c ) {
+					if ( (int) ( $c['id'] ?? 0 ) === $category_id ) {
+						$category = $c;
+						break;
+					}
+				}
+			}
 		}
 
 		FSWA_MyAccount::load_template( 'myaccount/kb-article.php', compact(
@@ -143,19 +204,21 @@ class FSWA_KnowledgeBase {
 		) );
 	}
 
-	private static function render_search( FSWA_API $api ): void {
+	private static function render_search( FSWA_API $api, int $mailbox_id ): void {
 		$query    = sanitize_text_field( wp_unslash( $_GET['s'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification
-		$page     = max( 1, (int) ( $_GET['paged'] ?? 1 ) );               // phpcs:ignore WordPress.Security.NonceVerification
-		$per_page = (int) get_option( 'fswa_kb_per_page', 15 );
-
-		$articles    = [];
-		$total_pages = 1;
+		$articles = [];
 
 		if ( '' !== $query ) {
-			$result      = $api->get_kb_articles( 0, $query, $page, $per_page );
-			$articles    = ! is_wp_error( $result ) ? ( $result['_embedded']['articles'] ?? [] ) : [];
-			$total_pages = ! is_wp_error( $result ) ? (int) ( $result['page']['totalPages'] ?? 1 )  : 1;
+			$result   = $api->search_kb( $mailbox_id, $query );
+			if ( ! is_wp_error( $result ) ) {
+				$data     = self::unwrap( $result );
+				$articles = $data['articles'] ?? ( isset( $data[0] ) ? $data : [] );
+			}
 		}
+
+		// Search results don't paginate in the current KB API modules.
+		$page        = 1;
+		$total_pages = 1;
 
 		FSWA_MyAccount::load_template( 'myaccount/kb-search.php', compact(
 			'query',
@@ -170,15 +233,51 @@ class FSWA_KnowledgeBase {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * Show a user-friendly message when the Docs module is unavailable (404)
-	 * or return a generic error for other failures.
+	 * Configured KB mailbox ID (0 = not set).
+	 */
+	private static function get_mailbox_id(): int {
+		return (int) get_option( 'fswa_kb_mailbox_id', 0 );
+	}
+
+	/**
+	 * Unwrap the KB module API response to the useful payload.
+	 *
+	 * The EcomGraduates module wraps every response as:
+	 *   { "success": true, "data": { ... } }
+	 *
+	 * The jtorvald module returns a plain array or object.
+	 *
+	 * @param  array  $response  Already-decoded response from FSWA_API.
+	 * @param  string $key       Optional key to pull from the unwrapped data.
+	 * @return array
+	 */
+	private static function unwrap( array $response, string $key = '' ): array {
+		$data = $response;
+
+		if ( isset( $response['success'] ) && array_key_exists( 'data', $response ) ) {
+			$data = (array) $response['data'];
+		}
+
+		if ( '' !== $key ) {
+			return (array) ( $data[ $key ] ?? [] );
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Show a user-friendly message based on the API error status code.
 	 */
 	private static function maybe_show_unavailable( WP_Error $error ): void {
 		$status = (int) ( $error->get_error_data()['status'] ?? 0 );
 
 		if ( 404 === $status ) {
 			echo '<p class="fswa-notice fswa-notice--info">'
-				. esc_html__( 'The knowledge base is not available. Please ensure the FreeScout Docs module is installed and enabled.', 'fswa' )
+				. esc_html__( 'The knowledge base is not available. Please ensure a FreeScout Knowledge Base API module is installed and the KB Mailbox ID is configured correctly.', 'fswa' )
+				. '</p>';
+		} elseif ( 405 === $status ) {
+			echo '<p class="fswa-notice fswa-notice--warning">'
+				. esc_html__( 'The knowledge base API returned "Method Not Allowed" (405). Please verify the KB Mailbox ID setting and ensure a compatible Knowledge Base API module is active in FreeScout.', 'fswa' )
 				. '</p>';
 		} else {
 			echo '<p class="fswa-notice fswa-notice--error">'
@@ -198,8 +297,17 @@ class FSWA_KnowledgeBase {
 		return wc_get_account_endpoint_url( self::ENDPOINT ) . 'cat-' . $id . '/';
 	}
 
-	public static function article_url( int $id ): string {
-		return wc_get_account_endpoint_url( self::ENDPOINT ) . $id . '/';
+	/**
+	 * Build an article URL.
+	 *
+	 * Both category_id and article_id are required because the KB API
+	 * endpoint for a single article is nested under its category.
+	 *
+	 * @param int $category_id  Parent category ID.
+	 * @param int $article_id   Article ID.
+	 */
+	public static function article_url( int $category_id, int $article_id ): string {
+		return wc_get_account_endpoint_url( self::ENDPOINT ) . 'cat-' . $category_id . '-art-' . $article_id . '/';
 	}
 
 	public static function search_url( string $query = '' ): string {

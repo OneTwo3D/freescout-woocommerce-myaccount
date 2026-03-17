@@ -184,64 +184,61 @@ class FSWA_API {
 	}
 
 	// -------------------------------------------------------------------------
-	// Knowledge Base (Docs module)
+	// Knowledge Base
+	//
+	// Requires a FreeScout Knowledge Base API module such as:
+	//   • jtorvald/freescout-knowledge-api          (2 endpoints)
+	//   • EcomGraduates/KnowledgeBaseApiModule      (full CRUD + search)
+	//
+	// Both expose routes under /api/knowledgebase/{mailbox_id}/...
+	// The mailbox_id is configured in WooCommerce → FreeScout → KB Mailbox ID.
 	// -------------------------------------------------------------------------
 
 	/**
-	 * Return all knowledge base categories.
+	 * Return all KB categories for a mailbox.
 	 *
-	 * Requires the FreeScout Docs module to be installed.
-	 *
+	 * @param  int $mailbox_id  FreeScout mailbox ID.
 	 * @return array|WP_Error
 	 */
-	public function get_kb_categories() {
-		return $this->get( '/api/docs/categories' );
+	public function get_kb_categories( int $mailbox_id ) {
+		return $this->get( '/api/knowledgebase/' . $mailbox_id . '/categories' );
 	}
 
 	/**
-	 * Return a single knowledge base category.
+	 * Return articles for a KB category (response may also include category metadata).
 	 *
-	 * @param  int $category_id
+	 * @param  int $mailbox_id   FreeScout mailbox ID.
+	 * @param  int $category_id  KB category ID.
 	 * @return array|WP_Error
 	 */
-	public function get_kb_category( int $category_id ) {
-		return $this->get( '/api/docs/categories/' . $category_id );
+	public function get_kb_category( int $mailbox_id, int $category_id ) {
+		return $this->get( '/api/knowledgebase/' . $mailbox_id . '/categories/' . $category_id );
 	}
 
 	/**
-	 * Return a paginated list of knowledge base articles.
+	 * Return a single KB article.
 	 *
-	 * @param  int    $category_id  Filter by category (0 = all categories).
-	 * @param  string $search       Optional search term.
-	 * @param  int    $page         1-based page number.
-	 * @param  int    $per_page     Items per page.
+	 * Supported by EcomGraduates/KnowledgeBaseApiModule.
+	 * The jtorvald module does not expose this endpoint (expect a 404).
+	 *
+	 * @param  int $mailbox_id   FreeScout mailbox ID.
+	 * @param  int $category_id  Parent KB category ID.
+	 * @param  int $article_id   KB article ID.
 	 * @return array|WP_Error
 	 */
-	public function get_kb_articles( int $category_id = 0, string $search = '', int $page = 1, int $per_page = 20 ) {
-		$params = [
-			'page'     => $page,
-			'pageSize' => min( $per_page, 50 ),
-		];
-
-		if ( $category_id ) {
-			$params['categoryId'] = $category_id;
-		}
-
-		if ( '' !== $search ) {
-			$params['search'] = $search;
-		}
-
-		return $this->get( '/api/docs/articles', $params );
+	public function get_kb_article( int $mailbox_id, int $category_id, int $article_id ) {
+		return $this->get( '/api/knowledgebase/' . $mailbox_id . '/categories/' . $category_id . '/articles/' . $article_id );
 	}
 
 	/**
-	 * Return a single knowledge base article.
+	 * Search KB articles.
 	 *
-	 * @param  int $article_id
+	 * @param  int    $mailbox_id  FreeScout mailbox ID.
+	 * @param  string $query       Search term.
 	 * @return array|WP_Error
 	 */
-	public function get_kb_article( int $article_id ) {
-		return $this->get( '/api/docs/articles/' . $article_id );
+	public function search_kb( int $mailbox_id, string $query ) {
+		return $this->get( '/api/knowledgebase/' . $mailbox_id . '/search', [ 'q' => $query ] );
 	}
 
 	// -------------------------------------------------------------------------

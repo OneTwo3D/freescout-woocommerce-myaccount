@@ -146,6 +146,16 @@ class FSWA_Admin {
 			'fswa-settings'
 		);
 
+		self::register_field(
+			'fswa_kb_mailbox_id',
+			__( 'KB Mailbox ID', 'fswa' ),
+			'fswa_kb',
+			'number',
+			'1',
+			'absint',
+			__( 'The mailbox ID to read knowledge base content from. Required — check FreeScout → Mailboxes for the ID.', 'fswa' )
+		);
+
 		register_setting( 'fswa-settings', 'fswa_kb_enabled', [
 			'type'              => 'boolean',
 			'default'           => 1,

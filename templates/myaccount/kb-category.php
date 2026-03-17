@@ -41,7 +41,7 @@ $cat_desc = $category['text'] ?? $category['description'] ?? '';
 			<?php foreach ( $articles as $article ) :
 				$art_id    = (int) ( $article['id'] ?? 0 );
 				$art_title = esc_html( $article['name'] ?? $article['title'] ?? __( '(untitled)', 'fswa' ) );
-				$art_url   = FSWA_KnowledgeBase::article_url( $art_id );
+				$art_url   = FSWA_KnowledgeBase::article_url( $category_id, $art_id );
 				$views     = (int) ( $article['viewsCount'] ?? 0 );
 			?>
 			<li class="fswa-kb-article-list__item">
