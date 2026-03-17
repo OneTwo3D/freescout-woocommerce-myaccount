@@ -12,7 +12,7 @@ A WordPress plugin that lets WooCommerce customers read and reply to [FreeScout]
 | PHP | 7.4 |
 | WooCommerce | 7.0 |
 | FreeScout | Any version with REST API enabled |
-| FreeScout Docs module | Required for the Knowledge Base feature (optional) |
+| FreeScout KB API module | Required for the Knowledge Base feature — see [Knowledge Base](#knowledge-base) (optional) |
 
 ---
 
@@ -22,7 +22,7 @@ A WordPress plugin that lets WooCommerce customers read and reply to [FreeScout]
 2. Activate the plugin from **WordPress Admin → Plugins**.
 3. Go to **WooCommerce → FreeScout** and enter your API credentials (see [Configuration](#configuration)).
 4. Visit **My Account → Support Tickets** as a logged-in customer to verify everything works.
-5. *(Optional)* Enable the Knowledge Base tab and install the FreeScout Docs module on your FreeScout instance.
+5. *(Optional)* Enable the Knowledge Base tab and install a FreeScout Knowledge Base API module on your FreeScout instance (see [Knowledge Base](#knowledge-base)).
 
 > **Tip:** If a My Account tab does not appear after activation, go to **Settings → Permalinks** and click **Save Changes** to flush rewrite rules.
 
@@ -59,7 +59,8 @@ Use the **Test API Connection** button to confirm the credentials are valid. A s
 
 | Setting | Default | Description |
 |---|---|---|
-| **Enable Knowledge Base** | Enabled | Shows a **Knowledge Base** tab in My Account. Requires the FreeScout Docs module. |
+| **Enable Knowledge Base** | Enabled | Shows a **Knowledge Base** tab in My Account. Requires a FreeScout KB API module — see [Knowledge Base](#knowledge-base). |
+| **KB Mailbox ID** | — | The numeric ID of the FreeScout mailbox whose knowledge base to display. Find the mailbox ID in FreeScout under **Manage → Mailboxes**. |
 | **KB Menu Label** | `Knowledge Base` | Text shown in the My Account navigation menu for the KB tab. |
 | **Articles Per Page** | `15` | Number of articles shown per page in category and search views (1–50). |
 | **Search Bar** | Enabled | Displays a search bar at the top of the KB home page with live autocomplete. |
@@ -81,14 +82,19 @@ An in-page reply form is shown below the thread for any open ticket. Replies are
 When enabled, customers can open a new ticket by clicking **+ New Ticket**. They enter a subject and message, and optionally choose a department (mailbox). On success they are redirected to the newly created ticket.
 
 ### Knowledge Base
-Customers can browse a full knowledge base powered by the [FreeScout Docs module](https://freescout.net/module/docs/):
+Customers can browse a full knowledge base. This feature requires a **FreeScout Knowledge Base API module** — the core FreeScout REST API does not expose KB content. Two compatible open-source modules are available:
+
+- [**jtorvald/freescout-knowledge-api**](https://github.com/jtorvald/freescout-knowledge-api) — lightweight; exposes category and article-list endpoints.
+- [**EcomGraduates/KnowledgeBaseApiModule**](https://github.com/EcomGraduates/KnowledgeBaseApiModule) — full-featured fork; adds single-article, search, and popular-content endpoints. Recommended.
+
+Install one of the above modules in FreeScout, then set the **KB Mailbox ID** in the plugin settings.
 
 - **Home** — a card grid of all KB categories, each showing its name, description, and article count.
-- **Category** — a paginated list of articles within a selected category.
+- **Category** — a list of articles within a selected category.
 - **Article** — the full article body with breadcrumb navigation back to the category. A "Still need help? Open a ticket" link is shown when new tickets are enabled.
 - **Search** — a keyword search across all articles, with a live-autocomplete dropdown that fires as the customer types (results appear after 2 characters, keyboard-navigable).
 
-The KB tab is independent of the ticket feature and can be enabled/disabled separately. If the Docs module is not installed, the tab shows a friendly message instead of an error.
+The KB tab is independent of the ticket feature and can be enabled/disabled separately. If the KB module is not installed or the mailbox ID is not configured, the tab shows a friendly message.
 
 ### Security
 - All AJAX actions require the user to be logged in and validate a WordPress nonce.
@@ -188,8 +194,8 @@ Yes, as long as the WordPress server can reach your FreeScout URL over HTTP/HTTP
 **Is TLS/HTTPS required?**
 Not strictly, but strongly recommended. API keys are transmitted in request headers, so an unencrypted connection would expose them.
 
-**The Knowledge Base tab shows "The knowledge base is not available. Please ensure the FreeScout Docs module is installed and enabled."**
-Install the [FreeScout Docs module](https://freescout.net/module/docs/) on your FreeScout instance and ensure it is enabled. The plugin detects when the Docs API endpoint returns a 404 and shows this message.
+**The Knowledge Base tab shows an unavailability message or "Method Not Allowed".**
+The KB feature requires a separate FreeScout Knowledge Base API module — the core FreeScout REST API does not include KB endpoints. Install either [jtorvald/freescout-knowledge-api](https://github.com/jtorvald/freescout-knowledge-api) or [EcomGraduates/KnowledgeBaseApiModule](https://github.com/EcomGraduates/KnowledgeBaseApiModule) on your FreeScout instance, then set the **KB Mailbox ID** under **WooCommerce → FreeScout → Knowledge Base**.
 
 **The KB search autocomplete does not appear.**
 Autocomplete requires at least 2 characters. Also verify the **Search Bar** option is enabled in **WooCommerce → FreeScout → Knowledge Base** and that JavaScript is not blocked on your site.
@@ -197,6 +203,15 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 ---
 
 ## Changelog
+
+### 1.1.5
+- **Fix:** Knowledge Base API endpoints corrected from `/api/docs/...` to `/api/knowledgebase/{mailbox_id}/...`. The core FreeScout REST API does not expose KB content; a separate module is required. The old paths collided with internal FreeScout admin routes (POST-only), causing an HTTP 405 error every time the KB section was opened.
+- **New setting:** **KB Mailbox ID** — required to construct the correct API URL for the configured mailbox.
+- **Compatibility:** KB integration now supports both [jtorvald/freescout-knowledge-api](https://github.com/jtorvald/freescout-knowledge-api) (2-endpoint) and [EcomGraduates/KnowledgeBaseApiModule](https://github.com/EcomGraduates/KnowledgeBaseApiModule) (full-featured). When the single-article endpoint is absent (jtorvald module), the plugin falls back to fetching the parent category and locating the article within the list.
+- **Response handling:** added `unwrap()` helper to support both the EcomGraduates `{success, data:{…}}` envelope and plain-array responses from the jtorvald module.
+- **Article URLs** updated to `cat-{categoryId}-art-{articleId}` format so the category ID required by the API is preserved in the URL. Existing bookmarked article URLs will redirect to the KB home page.
+- **Improved error messages** for HTTP 404 and 405 responses in the KB section, with guidance on which module to install.
+- Updated KB documentation in README to reflect the correct module requirements.
 
 ### 1.1.0
 - Knowledge Base integration powered by the FreeScout Docs module.
