@@ -211,21 +211,6 @@ class FSWA_KnowledgeBase {
 			}
 		}
 
-		// Admin-only debug panel: shows the raw API data so the parent-ID field
-		// name can be identified when subcategory detection is still failing.
-		if ( empty( $subcategories ) && current_user_can( 'manage_woocommerce' ) ) {
-			$sample = array_slice( $all_cats ?? [], 0, 3 );
-			echo '<details style="margin:8px 0;font-size:12px;border:1px dashed #ccc;padding:6px;">'
-				. '<summary style="cursor:pointer;color:#666;">⚙ FSWA debug — category API data (visible to admins only)</summary>'
-				. '<p style="margin:4px 0"><strong>Category endpoint keys:</strong> '
-				. esc_html( implode( ', ', array_keys( $data ) ) ) . '</p>'
-				. '<p style="margin:4px 0"><strong>First 3 categories from list (keys per item):</strong></p>'
-				. '<pre style="overflow:auto;max-height:200px;background:#f6f8fa;padding:6px;">'
-				. esc_html( wp_json_encode( $sample, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE ) )
-				. '</pre>'
-				. '</details>';
-		}
-
 		// The KB module API does not paginate category articles.
 		$page        = 1;
 		$total_pages = 1;
@@ -468,7 +453,57 @@ class FSWA_KnowledgeBase {
 			}
 			return (int) $parent;
 		}
+
+		// Fallback: check the manually configured category hierarchy.
+		// This is required when the API returns a flat list with no parent info.
+		$cat_id = (int) ( $category['id'] ?? 0 );
+		if ( $cat_id ) {
+			$maps = self::hierarchy_maps();
+			if ( isset( $maps['parent_of'][ $cat_id ] ) ) {
+				return $maps['parent_of'][ $cat_id ];
+			}
+		}
+
 		return 0;
+	}
+
+	/**
+	 * Parse the `fswa_kb_category_hierarchy` option into two lookup maps.
+	 *
+	 * Format (one line per parent):  parent_id:child_id,child_id,...
+	 * Example:                       1:2,3,9
+	 *
+	 * @return array{children_of: array<int,int[]>, parent_of: array<int,int>}
+	 */
+	private static function hierarchy_maps(): array {
+		static $maps = null;
+		if ( null !== $maps ) {
+			return $maps;
+		}
+
+		$maps = [ 'children_of' => [], 'parent_of' => [] ];
+		$raw  = (string) get_option( 'fswa_kb_category_hierarchy', '' );
+
+		foreach ( explode( "\n", $raw ) as $line ) {
+			$line = trim( $line );
+			if ( '' === $line || false === strpos( $line, ':' ) ) {
+				continue;
+			}
+			[ $parent_str, $children_str ] = explode( ':', $line, 2 );
+			$parent_id = (int) trim( $parent_str );
+			if ( ! $parent_id ) {
+				continue;
+			}
+			foreach ( explode( ',', $children_str ) as $child_str ) {
+				$child_id = (int) trim( $child_str );
+				if ( $child_id ) {
+					$maps['children_of'][ $parent_id ][] = $child_id;
+					$maps['parent_of'][ $child_id ]       = $parent_id;
+				}
+			}
+		}
+
+		return $maps;
 	}
 
 	/**

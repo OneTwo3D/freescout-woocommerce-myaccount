@@ -234,6 +234,29 @@ class FSWA_Admin {
 			'fswa_kb'
 		);
 
+		register_setting( 'fswa-settings', 'fswa_kb_category_hierarchy', [
+			'type'              => 'string',
+			'sanitize_callback' => 'sanitize_textarea_field',
+		] );
+		add_settings_field(
+			'fswa_kb_category_hierarchy',
+			__( 'Category Hierarchy', 'fswa' ),
+			function () {
+				$value = get_option( 'fswa_kb_category_hierarchy', '' );
+				echo '<textarea id="fswa_kb_category_hierarchy" name="fswa_kb_category_hierarchy" rows="5" class="large-text code" placeholder="1:2,3,9&#10;8:10,11">'
+					. esc_textarea( $value )
+					. '</textarea>';
+				echo '<p class="description">'
+					. esc_html__( 'The KB API does not expose category hierarchy, so you must define it here. One parent per line:', 'fswa' )
+					. ' <code>parent_id:child_id,child_id,...</code><br>'
+					. esc_html__( 'Example — category 1 is a parent of 2, 3 and 9:', 'fswa' )
+					. ' <code>1:2,3,9</code>'
+					. '</p>';
+			},
+			'fswa-settings',
+			'fswa_kb'
+		);
+
 		// ------------------------------------------------------------------ //
 		// Section: Spam Protection
 		// ------------------------------------------------------------------ //
