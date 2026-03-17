@@ -292,7 +292,9 @@ class FSWA_Ajax {
 		foreach ( $raw as $article ) {
 			$id     = (int) ( $article['id'] ?? 0 );
 			$title  = sanitize_text_field( $article['name'] ?? $article['title'] ?? '' );
-			$cat_id = (int) ( $article['categoryId'] ?? $article['category_id'] ?? 0 );
+			// categoryId may be a top-level integer or nested as category.id
+			$cat_id = (int) ( $article['categoryId'] ?? $article['category_id']
+				?? ( $article['category']['id'] ?? 0 ) );
 			if ( $id && $title ) {
 				$articles[] = [
 					'id'    => $id,

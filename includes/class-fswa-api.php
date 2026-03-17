@@ -292,9 +292,8 @@ class FSWA_API {
 	private function get( string $endpoint, array $params = [] ) {
 		$url = $this->base_url . $endpoint;
 		if ( ! empty( $params ) ) {
-			$url = add_query_arg( array_map( 'rawurlencode', array_map( 'strval', $params ) ), $url );
-			// add_query_arg already URL-encodes; rebuild correctly:
-			$url = $this->base_url . $endpoint . '?' . http_build_query( $params );
+			// Use RFC3986 so spaces are encoded as %20, not +, for broader server compatibility.
+			$url = $url . '?' . http_build_query( $params, '', '&', PHP_QUERY_RFC3986 );
 		}
 
 		$response = wp_remote_get( $url, $this->request_args() );

@@ -281,6 +281,12 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 
 ## Changelog
 
+### 1.1.23
+- **Fix:** Articles were missing from KB category pages when the API module returns articles nested inside the category object (`data.category.articles`) rather than at the top level (`data.articles`). The extraction logic now checks both locations.
+- **Fix:** The same nested-articles issue caused "Article not found" errors when navigating to an article via the jtorvald-module fallback path.
+- **Fix:** KB search result links went to the KB home page when the API returned category information as an object (`article.category.id`) instead of a flat integer (`article.categoryId`). Both the full-page search results and the live-search autocomplete now resolve the category ID correctly.
+- **Fix:** URL query parameters were encoded with `+` for spaces (RFC1738) instead of `%20` (RFC3986). Some FreeScout installations rejected these requests, causing search and other parameterised API calls to fail silently.
+
 ### 1.1.21
 - **New:** File attachments on ticket submission forms. Both the My Account form (logged-in) and the `[fswa_new_ticket_form]` shortcode form accept PDF, JPG, PNG, GIF, WebP, and TXT files. Up to 5 files, 10 MB each. Files are sent to FreeScout as base64-encoded thread attachments.
 - **New:** Cloudflare Turnstile captcha on the public `[fswa_new_ticket_form]` shortcode form. Configure your Site Key and Secret Key under **WooCommerce → FreeScout → Spam Protection**. The captcha is skipped for logged-in users submitting via My Account. Leave the keys blank to disable.

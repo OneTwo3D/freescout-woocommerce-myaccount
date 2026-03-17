@@ -146,10 +146,19 @@ class FSWA_KnowledgeBase {
 		}
 
 		$data     = self::unwrap( $result );
-		$articles = $data['articles'] ?? $data['docs'] ?? ( isset( $data[0] ) ? $data : [] );
 
-		// Category metadata may be embedded; otherwise look it up from the list.
+		// Category metadata may be embedded at the top level OR as a nested
+		// 'category' key. Extract it first so we can also check for articles
+		// nested inside it (some module versions return articles there).
 		$category = $data['category'] ?? null;
+
+		// Articles may be at top level, under 'docs', nested inside the
+		// category object, or the response may be a plain array.
+		$articles = $data['articles']
+			?? $data['docs']
+			?? ( null !== $category ? ( $category['articles'] ?? $category['docs'] ?? null ) : null )
+			?? ( isset( $data[0] ) ? $data : [] );
+
 		if ( null === $category ) {
 			$cats_result = $api->get_kb_categories( $mailbox_id );
 			if ( ! is_wp_error( $cats_result ) ) {
@@ -191,7 +200,11 @@ class FSWA_KnowledgeBase {
 			}
 
 			$data     = self::unwrap( $cat_result );
-			$articles = $data['articles'] ?? $data['docs'] ?? ( isset( $data[0] ) ? $data : [] );
+			$cat_meta = $data['category'] ?? null;
+			$articles = $data['articles']
+				?? $data['docs']
+				?? ( null !== $cat_meta ? ( $cat_meta['articles'] ?? $cat_meta['docs'] ?? null ) : null )
+				?? ( isset( $data[0] ) ? $data : [] );
 			$article  = null;
 
 			foreach ( $articles as $a ) {
@@ -236,10 +249,17 @@ class FSWA_KnowledgeBase {
 		$articles = [];
 
 		if ( '' !== $query ) {
-			$result   = $api->search_kb( $mailbox_id, $query );
+			$result = $api->search_kb( $mailbox_id, $query );
 			if ( ! is_wp_error( $result ) ) {
 				$data     = self::unwrap( $result );
 				$articles = $data['articles'] ?? $data['docs'] ?? ( isset( $data[0] ) ? $data : [] );
+			} else {
+				// Surface API errors as an admin notice to aid debugging.
+				if ( is_admin() || current_user_can( 'manage_woocommerce' ) ) {
+					echo '<p class="fswa-notice fswa-notice--warning">'
+						. esc_html( $result->get_error_message() )
+						. '</p>';
+				}
 			}
 		}
 
