@@ -301,7 +301,7 @@ class FSWA_Ajax {
 					'title' => $title,
 					'url'   => $cat_id
 						? FSWA_KnowledgeBase::article_url( $cat_id, $id )
-						: FSWA_KnowledgeBase::home_url(),
+						: FSWA_KnowledgeBase::article_url_by_id( $id ),
 				];
 			}
 		}

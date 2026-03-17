@@ -111,8 +111,11 @@ class FSWA_KnowledgeBase {
 		if ( 'search' === $value ) {
 			self::render_search( $api, $mailbox_id );
 		} elseif ( preg_match( '/^cat-(\d+)-art-(\d+)$/', $value, $m ) ) {
-			// Single article: cat-{catId}-art-{artId}
+			// Single article with known category: cat-{catId}-art-{artId}
 			self::render_article( (int) $m[1], (int) $m[2], $api, $mailbox_id );
+		} elseif ( preg_match( '/^art-(\d+)$/', $value, $m ) ) {
+			// Single article without category context (e.g. from search results)
+			self::render_article_by_id( (int) $m[1], $api, $mailbox_id );
 		} elseif ( str_starts_with( $value, 'cat-' ) ) {
 			self::render_category( (int) substr( $value, 4 ), $api, $mailbox_id );
 		} else {
@@ -180,6 +183,76 @@ class FSWA_KnowledgeBase {
 			'articles',
 			'page',
 			'total_pages',
+			'category_id'
+		) );
+	}
+
+	/**
+	 * Render an article when the category ID is not known (e.g. from a search result).
+	 *
+	 * Tries a direct /articles/{id} endpoint first (not all modules support it),
+	 * then falls back to scanning every category until the article is found.
+	 */
+	private static function render_article_by_id( int $article_id, FSWA_API $api, int $mailbox_id ): void {
+		// --- Attempt 1: direct endpoint (EcomGraduates-style). ---
+		$result = $api->get_kb_article_direct( $mailbox_id, $article_id );
+
+		if ( ! is_wp_error( $result ) ) {
+			$article     = self::unwrap( $result );
+			$category_id = 0;
+			$category    = null;
+		} else {
+			// --- Attempt 2: scan all categories for the article. ---
+			$cats_result = $api->get_kb_categories( $mailbox_id );
+			if ( is_wp_error( $cats_result ) ) {
+				self::maybe_show_unavailable( $cats_result );
+				return;
+			}
+
+			$article     = null;
+			$category_id = 0;
+			$category    = null;
+
+			foreach ( self::unwrap( $cats_result, 'categories' ) as $cat ) {
+				$cid = (int) ( $cat['id'] ?? 0 );
+				if ( ! $cid ) {
+					continue;
+				}
+
+				$cat_result = $api->get_kb_category( $mailbox_id, $cid );
+				if ( is_wp_error( $cat_result ) ) {
+					continue;
+				}
+
+				$data     = self::unwrap( $cat_result );
+				$cat_meta = $data['category'] ?? null;
+				$articles = $data['articles']
+					?? $data['docs']
+					?? ( null !== $cat_meta ? ( $cat_meta['articles'] ?? $cat_meta['docs'] ?? null ) : null )
+					?? ( isset( $data[0] ) ? $data : [] );
+
+				foreach ( $articles as $a ) {
+					if ( (int) ( $a['id'] ?? 0 ) === $article_id ) {
+						$article     = $a;
+						$category_id = $cid;
+						$category    = $cat;
+						break 2;
+					}
+				}
+			}
+
+			if ( null === $article ) {
+				echo '<p class="fswa-notice fswa-notice--error">'
+					. esc_html__( 'Article not found.', 'fswa' )
+					. '</p>';
+				return;
+			}
+		}
+
+		FSWA_MyAccount::load_template( 'myaccount/kb-article.php', compact(
+			'article',
+			'article_id',
+			'category',
 			'category_id'
 		) );
 	}
@@ -352,6 +425,22 @@ class FSWA_KnowledgeBase {
 	}
 
 	/**
+	 * Build an article URL when the parent category ID is unknown.
+	 *
+	 * Uses the art-{id} scheme which resolves the article server-side
+	 * (see render_article_by_id). Use article_url() instead when the
+	 * category ID is known, as it avoids the extra API lookup.
+	 *
+	 * @param int $article_id  Article ID.
+	 */
+	public static function article_url_by_id( int $article_id ): string {
+		if ( null !== self::$shortcode_base ) {
+			return add_query_arg( 'fswa_kb', 'art-' . $article_id, self::$shortcode_base );
+		}
+		return wc_get_account_endpoint_url( self::ENDPOINT ) . 'art-' . $article_id . '/';
+	}
+
+	/**
 	 * Build an article URL.
 	 *
 	 * Both category_id and article_id are required because the KB API
@@ -432,6 +521,8 @@ class FSWA_KnowledgeBase {
 			self::render_search( $api, $mailbox_id );
 		} elseif ( preg_match( '/^cat-(\d+)-art-(\d+)$/', $value, $m ) ) {
 			self::render_article( (int) $m[1], (int) $m[2], $api, $mailbox_id );
+		} elseif ( preg_match( '/^art-(\d+)$/', $value, $m ) ) {
+			self::render_article_by_id( (int) $m[1], $api, $mailbox_id );
 		} elseif ( preg_match( '/^cat-(\d+)$/', $value, $m ) ) {
 			self::render_category( (int) $m[1], $api, $mailbox_id );
 		} else {

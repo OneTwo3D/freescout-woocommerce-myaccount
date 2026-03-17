@@ -73,7 +73,7 @@ defined( 'ABSPATH' ) || exit;
 				// categoryId may be a top-level integer or nested as category.id
 				$art_cat   = (int) ( $article['categoryId'] ?? $article['category_id']
 					?? ( $article['category']['id'] ?? 0 ) );
-				$art_url   = $art_cat ? FSWA_KnowledgeBase::article_url( $art_cat, $art_id ) : FSWA_KnowledgeBase::home_url();
+				$art_url   = $art_cat ? FSWA_KnowledgeBase::article_url( $art_cat, $art_id ) : FSWA_KnowledgeBase::article_url_by_id( $art_id );
 				$excerpt   = wp_trim_words( wp_strip_all_tags( $article['text'] ?? $article['preview'] ?? '' ), 20 );
 			?>
 			<li class="fswa-kb-article-list__item fswa-kb-article-list__item--search">

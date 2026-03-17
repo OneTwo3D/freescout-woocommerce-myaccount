@@ -233,6 +233,21 @@ class FSWA_API {
 	}
 
 	/**
+	 * Return a single KB article by ID alone (no category context).
+	 *
+	 * Tries /api/knowledgebase/{mailboxId}/articles/{articleId}.
+	 * Returns WP_Error (typically 404) when the module doesn't support
+	 * this endpoint; callers should fall back gracefully.
+	 *
+	 * @param  int $mailbox_id   FreeScout mailbox ID.
+	 * @param  int $article_id   KB article ID.
+	 * @return array|WP_Error
+	 */
+	public function get_kb_article_direct( int $mailbox_id, int $article_id ) {
+		return $this->kb_get( '/api/knowledgebase/' . $mailbox_id . '/articles/' . $article_id );
+	}
+
+	/**
 	 * Return a single KB article.
 	 *
 	 * Supported by EcomGraduates/KnowledgeBaseApiModule.
