@@ -135,7 +135,19 @@ class FSWA_KnowledgeBase {
 			return;
 		}
 
-		$categories = self::unwrap( $result, 'categories' );
+		$all = self::unwrap( $result, 'categories' );
+
+		// Only show root-level categories on the home page; subcategories are
+		// displayed when their parent category page is opened.
+		$categories = array_values( array_filter( $all, function ( array $cat ): bool {
+			return self::get_parent_id( $cat ) === 0;
+		} ) );
+
+		// If every category has no parent info fall back to the full list so
+		// we never show an empty home page.
+		if ( empty( $categories ) ) {
+			$categories = $all;
+		}
 
 		FSWA_MyAccount::load_template( 'myaccount/kb-home.php', compact( 'categories' ) );
 	}
@@ -162,14 +174,26 @@ class FSWA_KnowledgeBase {
 			?? ( null !== $category ? ( $category['articles'] ?? $category['docs'] ?? null ) : null )
 			?? ( isset( $data[0] ) ? $data : [] );
 
-		if ( null === $category ) {
-			$cats_result = $api->get_kb_categories( $mailbox_id );
-			if ( ! is_wp_error( $cats_result ) ) {
-				foreach ( self::unwrap( $cats_result, 'categories' ) as $c ) {
+		// Fetch all categories to resolve:
+		//   1. Category metadata (when not embedded in the category endpoint response).
+		//   2. Subcategories (child categories whose parent is $category_id).
+		$subcategories = [];
+		$cats_result   = $api->get_kb_categories( $mailbox_id );
+		if ( ! is_wp_error( $cats_result ) ) {
+			$all_cats = self::unwrap( $cats_result, 'categories' );
+
+			if ( null === $category ) {
+				foreach ( $all_cats as $c ) {
 					if ( (int) ( $c['id'] ?? 0 ) === $category_id ) {
 						$category = $c;
 						break;
 					}
+				}
+			}
+
+			foreach ( $all_cats as $c ) {
+				if ( self::get_parent_id( $c ) === $category_id ) {
+					$subcategories[] = $c;
 				}
 			}
 		}
@@ -181,6 +205,7 @@ class FSWA_KnowledgeBase {
 		FSWA_MyAccount::load_template( 'myaccount/kb-category.php', compact(
 			'category',
 			'articles',
+			'subcategories',
 			'page',
 			'total_pages',
 			'category_id'
@@ -351,6 +376,37 @@ class FSWA_KnowledgeBase {
 	// -------------------------------------------------------------------------
 	// Helpers
 	// -------------------------------------------------------------------------
+
+	/**
+	 * Extract the parent category ID from a category object.
+	 *
+	 * Different KB API modules use different field names:
+	 *   • parentId  (integer, EcomGraduates module)
+	 *   • parent_id (integer, some variants)
+	 *   • parent    (may be an integer, or an object/array with an 'id' key)
+	 *
+	 * Returns 0 when the category is a root (top-level) category or when no
+	 * parent information is available.
+	 *
+	 * @param  array $category  Category object from the API.
+	 * @return int  Parent category ID, or 0.
+	 */
+	private static function get_parent_id( array $category ): int {
+		if ( isset( $category['parentId'] ) ) {
+			return (int) $category['parentId'];
+		}
+		if ( isset( $category['parent_id'] ) ) {
+			return (int) $category['parent_id'];
+		}
+		if ( isset( $category['parent'] ) ) {
+			$parent = $category['parent'];
+			if ( is_array( $parent ) ) {
+				return (int) ( $parent['id'] ?? 0 );
+			}
+			return (int) $parent;
+		}
+		return 0;
+	}
 
 	/**
 	 * Configured KB mailbox ID (0 = not set).

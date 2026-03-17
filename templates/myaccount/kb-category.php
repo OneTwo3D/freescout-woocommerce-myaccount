@@ -3,11 +3,12 @@
  * Template: My Account – Knowledge Base category (article list).
  *
  * Available variables:
- *   @var array $category     Category object from the API.
- *   @var array $articles     Array of article objects for this category.
- *   @var int   $page         Current page number.
- *   @var int   $total_pages  Total pages.
- *   @var int   $category_id  Category ID.
+ *   @var array $category      Category object from the API.
+ *   @var array $articles      Array of article objects for this category.
+ *   @var array $subcategories Child category objects (may be empty).
+ *   @var int   $page          Current page number.
+ *   @var int   $total_pages   Total pages.
+ *   @var int   $category_id   Category ID.
  *
  * Themes can override this file at: <theme>/fswa/myaccount/kb-category.php
  */
@@ -34,9 +35,42 @@ $cat_desc = $category['text'] ?? $category['description'] ?? '';
 		<p class="fswa-kb__desc"><?php echo esc_html( $cat_desc ); ?></p>
 	<?php endif; ?>
 
-	<?php if ( empty( $articles ) ) : ?>
+	<?php if ( ! empty( $subcategories ) ) : ?>
+		<div class="fswa-kb-categories">
+			<?php foreach ( $subcategories as $sub ) :
+				$sub_id    = (int) ( $sub['id'] ?? 0 );
+				$sub_name  = esc_html( $sub['name'] ?? '' );
+				$sub_desc  = esc_html( $sub['text'] ?? $sub['description'] ?? '' );
+				$art_count = (int) ( $sub['articlesCount'] ?? 0 );
+				$sub_url   = FSWA_KnowledgeBase::category_url( $sub_id );
+			?>
+			<a href="<?php echo esc_url( $sub_url ); ?>" class="fswa-kb-category-card">
+				<div class="fswa-kb-category-card__icon" aria-hidden="true">
+					<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+				</div>
+				<div class="fswa-kb-category-card__body">
+					<h3 class="fswa-kb-category-card__name"><?php echo $sub_name; ?></h3>
+					<?php if ( $sub_desc ) : ?>
+						<p class="fswa-kb-category-card__desc"><?php echo $sub_desc; ?></p>
+					<?php endif; ?>
+					<?php if ( $art_count ) : ?>
+						<span class="fswa-kb-category-card__count">
+							<?php echo esc_html(
+								/* translators: %d: number of articles */
+								sprintf( _n( '%d article', '%d articles', $art_count, 'fswa' ), $art_count )
+							); ?>
+						</span>
+					<?php endif; ?>
+				</div>
+				<span class="fswa-kb-category-card__arrow" aria-hidden="true">&rsaquo;</span>
+			</a>
+			<?php endforeach; ?>
+		</div>
+	<?php endif; ?>
+
+	<?php if ( empty( $articles ) && empty( $subcategories ) ) : ?>
 		<p class="fswa-kb__empty"><?php esc_html_e( 'No articles in this category yet.', 'fswa' ); ?></p>
-	<?php else : ?>
+	<?php elseif ( ! empty( $articles ) ) : ?>
 		<ul class="fswa-kb-article-list">
 			<?php foreach ( $articles as $article ) :
 				$art_id    = (int) ( $article['id'] ?? 0 );
