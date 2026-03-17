@@ -242,7 +242,7 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 
 ## Changelog
 
-### 1.1.8
+### 1.1.9
 - **New:** SVG icons added to the Support Tickets and Knowledge Base entries in the My Account navigation. Icons use the same Feather icon style as the rest of the plugin (message-square for tickets, book-open for KB). Implemented via CSS `mask-image` so the icon colour automatically inherits the theme's link text colour.
 - **New:** Four shortcodes for embedding links to My Account pages anywhere on the site:
   - `[fswa_tickets_link]` / `[fswa_kb_link]` — rendered `<a>` elements with optional `text` and `class` attributes.
