@@ -211,6 +211,21 @@ class FSWA_KnowledgeBase {
 			}
 		}
 
+		// Admin-only debug panel: shows the raw API data so the parent-ID field
+		// name can be identified when subcategory detection is still failing.
+		if ( empty( $subcategories ) && current_user_can( 'manage_woocommerce' ) ) {
+			$sample = array_slice( $all_cats ?? [], 0, 3 );
+			echo '<details style="margin:8px 0;font-size:12px;border:1px dashed #ccc;padding:6px;">'
+				. '<summary style="cursor:pointer;color:#666;">⚙ FSWA debug — category API data (visible to admins only)</summary>'
+				. '<p style="margin:4px 0"><strong>Category endpoint keys:</strong> '
+				. esc_html( implode( ', ', array_keys( $data ) ) ) . '</p>'
+				. '<p style="margin:4px 0"><strong>First 3 categories from list (keys per item):</strong></p>'
+				. '<pre style="overflow:auto;max-height:200px;background:#f6f8fa;padding:6px;">'
+				. esc_html( wp_json_encode( $sample, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE ) )
+				. '</pre>'
+				. '</details>';
+		}
+
 		// The KB module API does not paginate category articles.
 		$page        = 1;
 		$total_pages = 1;
@@ -368,19 +383,39 @@ class FSWA_KnowledgeBase {
 		// treating KB search pages as WordPress blog-search pages and redirecting away.
 		$query    = sanitize_text_field( wp_unslash( $_GET['fswa_q'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification
 		$articles = [];
+		$raw_result = null;
 
 		if ( '' !== $query ) {
-			$result = $api->search_kb( $mailbox_id, $query );
+			$result     = $api->search_kb( $mailbox_id, $query );
+			$raw_result = $result; // keep for admin debug panel
 			if ( ! is_wp_error( $result ) ) {
 				$data     = self::unwrap( $result );
-				$articles = $data['articles'] ?? $data['docs'] ?? ( isset( $data[0] ) ? $data : [] );
+				$articles = $data['articles']
+					?? $data['docs']
+					?? $data['results']
+					?? $data['hits']
+					?? $data['items']
+					?? ( isset( $data[0] ) ? $data : [] );
 			} else {
 				// Surface API errors as an admin notice to aid debugging.
-				if ( is_admin() || current_user_can( 'manage_woocommerce' ) ) {
+				if ( current_user_can( 'manage_woocommerce' ) ) {
 					echo '<p class="fswa-notice fswa-notice--warning">'
 						. esc_html( $result->get_error_message() )
 						. '</p>';
 				}
+			}
+		}
+
+		// Admin-only debug panel: shows the raw API response so the correct
+		// articles key name can be identified when search returns no results.
+		if ( '' !== $query && empty( $articles ) && current_user_can( 'manage_woocommerce' ) ) {
+			if ( null !== $raw_result && ! is_wp_error( $raw_result ) ) {
+				echo '<details style="margin:8px 0;font-size:12px;border:1px dashed #ccc;padding:6px;">'
+					. '<summary style="cursor:pointer;color:#666;">⚙ FSWA debug — search API response (visible to admins only)</summary>'
+					. '<pre style="overflow:auto;max-height:300px;background:#f6f8fa;padding:6px;">'
+					. esc_html( wp_json_encode( $raw_result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE ) )
+					. '</pre>'
+					. '</details>';
 			}
 		}
 
