@@ -61,6 +61,7 @@ Use the **Test API Connection** button to confirm the credentials are valid. A s
 |---|---|---|
 | **Enable Knowledge Base** | Enabled | Shows a **Knowledge Base** tab in My Account. Requires a FreeScout KB API module — see [Knowledge Base](#knowledge-base). |
 | **KB Mailbox ID** | — | The numeric ID of the FreeScout mailbox whose knowledge base to display. Find the mailbox ID in FreeScout under **Manage → Mailboxes**. |
+| **KB API Token** | — | Authentication token for the KB module. Required for the EcomGraduates module — generate it in **FreeScout → Knowledge Base API → Settings**. Leave blank for the jtorvald module (uses the main API Key). |
 | **KB Menu Label** | `Knowledge Base` | Text shown in the My Account navigation menu for the KB tab. |
 | **Articles Per Page** | `15` | Number of articles shown per page in category and search views (1–50). |
 | **Search Bar** | Enabled | Displays a search bar at the top of the KB home page with live autocomplete. |
@@ -203,6 +204,10 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 ---
 
 ## Changelog
+
+### 1.1.7
+- **New setting:** **KB API Token** — optional token passed as `?token=...` on all Knowledge Base API requests. Required for the EcomGraduates/KnowledgeBaseApiModule (generate it in FreeScout → Knowledge Base API → Settings). Leave blank when using the jtorvald module, which authenticates via the main API Key header instead.
+- Updated KB section description in admin settings to link directly to both supported modules.
 
 ### 1.1.6
 - **Fix:** Knowledge Base API endpoints corrected from `/api/docs/...` to `/api/knowledgebase/{mailbox_id}/...`. The core FreeScout REST API does not expose KB content; a separate module is required. The old paths collided with internal FreeScout admin routes (POST-only), causing an HTTP 405 error every time the KB section was opened.

@@ -141,7 +141,10 @@ class FSWA_Admin {
 			'fswa_kb',
 			__( 'Knowledge Base', 'fswa' ),
 			function () {
-				echo '<p>' . esc_html__( 'Expose the FreeScout Docs knowledge base inside My Account. Requires the FreeScout Docs module to be installed.', 'fswa' ) . '</p>';
+				echo '<p>' . wp_kses(
+					__( 'Expose a FreeScout knowledge base inside My Account. Requires a <strong>FreeScout Knowledge Base API module</strong> — either <a href="https://github.com/jtorvald/freescout-knowledge-api" target="_blank" rel="noopener">jtorvald/freescout-knowledge-api</a> or <a href="https://github.com/EcomGraduates/KnowledgeBaseApiModule" target="_blank" rel="noopener">EcomGraduates/KnowledgeBaseApiModule</a> (recommended).', 'fswa' ),
+					[ 'a' => [ 'href' => [], 'target' => [], 'rel' => [] ], 'strong' => [] ]
+				) . '</p>';
 			},
 			'fswa-settings'
 		);
@@ -154,6 +157,16 @@ class FSWA_Admin {
 			'1',
 			'absint',
 			__( 'The mailbox ID to read knowledge base content from. Required — check FreeScout → Mailboxes for the ID.', 'fswa' )
+		);
+
+		self::register_field(
+			'fswa_kb_api_token',
+			__( 'KB API Token', 'fswa' ),
+			'fswa_kb',
+			'text',
+			'',
+			'sanitize_text_field',
+			__( 'API token for the Knowledge Base module (e.g. EcomGraduates/KnowledgeBaseApiModule). Generate it in FreeScout → Knowledge Base API → Settings. Leave blank if your module uses the main API Key above.', 'fswa' )
 		);
 
 		register_setting( 'fswa-settings', 'fswa_kb_enabled', [

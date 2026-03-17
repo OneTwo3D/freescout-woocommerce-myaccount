@@ -201,7 +201,7 @@ class FSWA_API {
 	 * @return array|WP_Error
 	 */
 	public function get_kb_categories( int $mailbox_id ) {
-		return $this->get( '/api/knowledgebase/' . $mailbox_id . '/categories' );
+		return $this->kb_get( '/api/knowledgebase/' . $mailbox_id . '/categories' );
 	}
 
 	/**
@@ -212,7 +212,7 @@ class FSWA_API {
 	 * @return array|WP_Error
 	 */
 	public function get_kb_category( int $mailbox_id, int $category_id ) {
-		return $this->get( '/api/knowledgebase/' . $mailbox_id . '/categories/' . $category_id );
+		return $this->kb_get( '/api/knowledgebase/' . $mailbox_id . '/categories/' . $category_id );
 	}
 
 	/**
@@ -227,7 +227,7 @@ class FSWA_API {
 	 * @return array|WP_Error
 	 */
 	public function get_kb_article( int $mailbox_id, int $category_id, int $article_id ) {
-		return $this->get( '/api/knowledgebase/' . $mailbox_id . '/categories/' . $category_id . '/articles/' . $article_id );
+		return $this->kb_get( '/api/knowledgebase/' . $mailbox_id . '/categories/' . $category_id . '/articles/' . $article_id );
 	}
 
 	/**
@@ -238,12 +238,32 @@ class FSWA_API {
 	 * @return array|WP_Error
 	 */
 	public function search_kb( int $mailbox_id, string $query ) {
-		return $this->get( '/api/knowledgebase/' . $mailbox_id . '/search', [ 'q' => $query ] );
+		return $this->kb_get( '/api/knowledgebase/' . $mailbox_id . '/search', [ 'q' => $query ] );
 	}
 
 	// -------------------------------------------------------------------------
 	// HTTP helpers
 	// -------------------------------------------------------------------------
+
+	/**
+	 * Perform a GET request for a Knowledge Base endpoint.
+	 *
+	 * Identical to get() but automatically appends the KB API token (stored in
+	 * the fswa_kb_api_token option) as a `token` query parameter when set.
+	 * Required by the EcomGraduates/KnowledgeBaseApiModule; ignored by modules
+	 * that authenticate via the X-FreeScout-API-Key header instead.
+	 *
+	 * @param  string $endpoint
+	 * @param  array  $params
+	 * @return array|WP_Error
+	 */
+	private function kb_get( string $endpoint, array $params = [] ) {
+		$token = get_option( 'fswa_kb_api_token', '' );
+		if ( '' !== $token ) {
+			$params['token'] = $token;
+		}
+		return $this->get( $endpoint, $params );
+	}
 
 	/**
 	 * Perform a GET request.
