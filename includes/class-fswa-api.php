@@ -83,11 +83,11 @@ class FSWA_API {
 	 */
 	public function get_conversations( int $customer_id, int $page = 1, int $per_page = 20 ) {
 		return $this->get( '/api/conversations', [
-			'customer' => $customer_id,
-			'page'     => $page,
-			'pageSize' => min( $per_page, 50 ),
-			'sortField'=> 'updatedAt',
-			'sortOrder'=> 'desc',
+			'customerId' => $customer_id,
+			'page'       => $page,
+			'pageSize'   => min( $per_page, 50 ),
+			'sortField'  => 'updatedAt',
+			'sortOrder'  => 'desc',
 		] );
 	}
 
