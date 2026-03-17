@@ -204,7 +204,7 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 
 ## Changelog
 
-### 1.1.5
+### 1.1.6
 - **Fix:** Knowledge Base API endpoints corrected from `/api/docs/...` to `/api/knowledgebase/{mailbox_id}/...`. The core FreeScout REST API does not expose KB content; a separate module is required. The old paths collided with internal FreeScout admin routes (POST-only), causing an HTTP 405 error every time the KB section was opened.
 - **New setting:** **KB Mailbox ID** — required to construct the correct API URL for the configured mailbox.
 - **Compatibility:** KB integration now supports both [jtorvald/freescout-knowledge-api](https://github.com/jtorvald/freescout-knowledge-api) (2-endpoint) and [EcomGraduates/KnowledgeBaseApiModule](https://github.com/EcomGraduates/KnowledgeBaseApiModule) (full-featured). When the single-article endpoint is absent (jtorvald module), the plugin falls back to fetching the parent category and locating the article within the list.
