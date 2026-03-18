@@ -282,6 +282,9 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 
 ## Changelog
 
+### 1.1.56
+- **Removed:** Knowledge Base API Debugger section from the admin settings page (UI and dead `run_kb_debug()` method).
+
 ### 1.1.55
 - **Improvement:** Replaced automatic Turnstile detection with a simple **Enable Turnstile** checkbox in the Spam Protection settings section. Enable it to load the Turnstile script and show the widget; disable it when another plugin already handles Turnstile site-wide. Removes the per-request transient write introduced in 1.1.54.
 
