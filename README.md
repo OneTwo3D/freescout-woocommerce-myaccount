@@ -282,6 +282,10 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 
 ## Changelog
 
+### 1.1.54
+- **Improvement:** Turnstile detection is now plugin-independent. `FSWA_MyAccount` hooks into `wp_enqueue_scripts` at priority 999 and checks whether the `cf-turnstile` script handle is already registered by any plugin, caching the result as a one-hour transient. The admin settings page reads that transient to decide whether to show the Spam Protection section. The `[fswa_new_ticket_form]` shortcode uses the same `wp_script_is` check at render time and only enqueues the Turnstile script itself when no other plugin has registered it.
+- **Removed:** hardcoded plugin-slug and constant detection in favour of the runtime script check above.
+
 ### 1.1.53
 - **Improvement:** Turnstile plugin detection now also recognises the XootiX Easy Login — Security addon (`easy-login-addon-security`). Because the addon is a private paid plugin with no public main-file slug, detection uses a folder-prefix match.
 

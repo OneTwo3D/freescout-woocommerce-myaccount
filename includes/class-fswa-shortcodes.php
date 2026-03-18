@@ -119,6 +119,21 @@ class FSWA_Shortcodes {
 		// Enqueue frontend assets (safe to call here – runs before wp_footer).
 		self::enqueue_assets();
 
+		// Enqueue the Turnstile script only when our own site key is configured
+		// and no other plugin has already registered the cf-turnstile handle.
+		// By the time a shortcode runs, all wp_enqueue_scripts callbacks have
+		// already fired, so wp_script_is() is an accurate, plugin-independent
+		// check at this point.
+		if ( get_option( 'fswa_turnstile_site_key', '' ) && ! wp_script_is( 'cf-turnstile', 'registered' ) ) {
+			wp_enqueue_script(
+				'cf-turnstile',
+				'https://challenges.cloudflare.com/turnstile/v0/api.js',
+				[],
+				null, // Cloudflare manages versioning
+				true
+			);
+		}
+
 		$mailboxes_result = $api->get_mailboxes();
 		$mailboxes        = ! is_wp_error( $mailboxes_result )
 			? ( $mailboxes_result['_embedded']['mailboxes'] ?? [] )

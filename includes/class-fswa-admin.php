@@ -286,48 +286,16 @@ class FSWA_Admin {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * Return true if a Cloudflare Turnstile plugin is already active.
+	 * Return true if the cf-turnstile script is already provided by another
+	 * plugin on the frontend.
 	 *
-	 * Checks for the most common standalone Turnstile plugins by their
-	 * well-known constants and plugin-file slugs. When one is found, the
-	 * plugin's own Spam Protection settings section is hidden to avoid
-	 * duplicating key management.
+	 * Detection runs via FSWA_MyAccount::detect_external_turnstile() on
+	 * wp_enqueue_scripts (priority 999) and is cached as a transient so this
+	 * admin-context method can read it without needing frontend script access.
+	 * Falls back to false until the first frontend page has been loaded.
 	 */
 	private static function has_turnstile_plugin(): bool {
-		// "Simple Cloudflare Turnstile" (most popular — 100k+ installs).
-		if ( defined( 'SIMPLE_CLOUDFLARE_TURNSTILE_VERSION' ) ) {
-			return true;
-		}
-
-		// Generic: scan the active-plugins list for known Turnstile slugs.
-		$active = (array) get_option( 'active_plugins', [] );
-
-		// Exact-match slugs for public plugins (folder/main-file.php known).
-		$exact = [
-			'simple-cloudflare-turnstile/simple-cloudflare-turnstile.php',
-			'cloudflare-turnstile/cloudflare-turnstile.php',
-			'cf-turnstile/cf-turnstile.php',
-		];
-		foreach ( $exact as $slug ) {
-			if ( in_array( $slug, $active, true ) ) {
-				return true;
-			}
-		}
-
-		// Prefix-match for private/paid plugins where the main filename is
-		// not publicly known (match on folder name only).
-		$prefixes = [
-			'easy-login-addon-security/', // XootiX Easy Login — Security addon (Turnstile/reCAPTCHA)
-		];
-		foreach ( $prefixes as $prefix ) {
-			foreach ( $active as $plugin ) {
-				if ( strpos( $plugin, $prefix ) === 0 ) {
-					return true;
-				}
-			}
-		}
-
-		return false;
+		return '1' === get_transient( 'fswa_external_turnstile' );
 	}
 
 	private static function register_field(

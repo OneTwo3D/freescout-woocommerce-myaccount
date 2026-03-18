@@ -24,6 +24,24 @@ class FSWA_MyAccount {
 
 		// Enqueue assets on My Account pages.
 		add_action( 'wp_enqueue_scripts', [ __CLASS__, 'enqueue_assets' ] );
+
+		// Detect whether an external Turnstile plugin is active and cache the
+		// result so the admin settings page can read it without having access
+		// to wp_enqueue_scripts context.
+		add_action( 'wp_enqueue_scripts', [ __CLASS__, 'detect_external_turnstile' ], 999 );
+	}
+
+	/**
+	 * Cache whether the cf-turnstile script is already registered by another
+	 * plugin. Runs at priority 999 so all other wp_enqueue_scripts callbacks
+	 * have had a chance to register their scripts first.
+	 */
+	public static function detect_external_turnstile(): void {
+		set_transient(
+			'fswa_external_turnstile',
+			wp_script_is( 'cf-turnstile', 'registered' ) ? '1' : '0',
+			HOUR_IN_SECONDS
+		);
 	}
 
 	public static function add_endpoint(): void {
