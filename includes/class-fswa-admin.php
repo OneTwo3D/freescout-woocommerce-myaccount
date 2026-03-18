@@ -236,67 +236,70 @@ class FSWA_Admin {
 
 		// ------------------------------------------------------------------ //
 		// Section: Spam Protection
-		// Only shown when no other Turnstile plugin is active — if one is,
-		// it already provides the Turnstile script and its own key management.
 		// ------------------------------------------------------------------ //
-		if ( ! self::has_turnstile_plugin() ) {
-			add_settings_section(
-				'fswa_spam',
-				__( 'Spam Protection', 'fswa' ),
-				function () {
-					echo '<p>' . wp_kses(
-						__( 'Add a <a href="https://www.cloudflare.com/products/turnstile/" target="_blank" rel="noopener">Cloudflare Turnstile</a> captcha to the public ticket submission form. Leave blank to disable. Obtain your keys from the Cloudflare dashboard.', 'fswa' ),
-						[ 'a' => [ 'href' => [], 'target' => [], 'rel' => [] ] ]
-					) . '</p>';
-				},
-				'fswa-settings'
-			);
+		add_settings_section(
+			'fswa_spam',
+			__( 'Spam Protection', 'fswa' ),
+			function () {
+				echo '<p>' . wp_kses(
+					__( 'Add a <a href="https://www.cloudflare.com/products/turnstile/" target="_blank" rel="noopener">Cloudflare Turnstile</a> captcha to the public ticket submission form. Obtain your keys from the Cloudflare dashboard.', 'fswa' ),
+					[ 'a' => [ 'href' => [], 'target' => [], 'rel' => [] ] ]
+				) . '</p>';
+			},
+			'fswa-settings'
+		);
 
-			self::register_field(
-				'fswa_turnstile_site_key',
-				__( 'Turnstile Site Key', 'fswa' ),
-				'fswa_spam',
-				'text',
-				'',
-				'sanitize_text_field',
-				__( 'Shown to visitors — safe to expose publicly.', 'fswa' )
-			);
+		register_setting( 'fswa-settings', 'fswa_turnstile_enabled', [
+			'type'              => 'boolean',
+			'default'           => 0,
+			'sanitize_callback' => 'absint',
+		] );
+		add_settings_field(
+			'fswa_turnstile_enabled',
+			__( 'Enable Turnstile', 'fswa' ),
+			function () {
+				$checked = get_option( 'fswa_turnstile_enabled', 0 );
+				echo '<label>';
+				echo '<input type="checkbox" name="fswa_turnstile_enabled" value="1" ' . checked( 1, $checked, false ) . '>';
+				echo ' ' . esc_html__( 'Show a Cloudflare Turnstile widget on the public ticket form', 'fswa' );
+				echo '</label>';
+				echo '<p class="description">' . esc_html__( 'Disable if another plugin already handles Turnstile site-wide.', 'fswa' ) . '</p>';
+			},
+			'fswa-settings',
+			'fswa_spam'
+		);
 
-			// Secret key uses password input so it is masked in the admin.
-			register_setting( 'fswa-settings', 'fswa_turnstile_secret_key', [
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
-			] );
-			add_settings_field(
-				'fswa_turnstile_secret_key',
-				__( 'Turnstile Secret Key', 'fswa' ),
-				function () {
-					$value = get_option( 'fswa_turnstile_secret_key', '' );
-					echo '<input type="password" id="fswa_turnstile_secret_key" name="fswa_turnstile_secret_key" value="' . esc_attr( $value ) . '" class="regular-text" autocomplete="off">';
-					echo '<p class="description">' . esc_html__( 'Keep this secret — never expose it publicly.', 'fswa' ) . '</p>';
-				},
-				'fswa-settings',
-				'fswa_spam'
-			);
-		}
+		self::register_field(
+			'fswa_turnstile_site_key',
+			__( 'Turnstile Site Key', 'fswa' ),
+			'fswa_spam',
+			'text',
+			'',
+			'sanitize_text_field',
+			__( 'Shown to visitors — safe to expose publicly.', 'fswa' )
+		);
+
+		// Secret key uses password input so it is masked in the admin.
+		register_setting( 'fswa-settings', 'fswa_turnstile_secret_key', [
+			'type'              => 'string',
+			'sanitize_callback' => 'sanitize_text_field',
+		] );
+		add_settings_field(
+			'fswa_turnstile_secret_key',
+			__( 'Turnstile Secret Key', 'fswa' ),
+			function () {
+				$value = get_option( 'fswa_turnstile_secret_key', '' );
+				echo '<input type="password" id="fswa_turnstile_secret_key" name="fswa_turnstile_secret_key" value="' . esc_attr( $value ) . '" class="regular-text" autocomplete="off">';
+				echo '<p class="description">' . esc_html__( 'Keep this secret — never expose it publicly.', 'fswa' ) . '</p>';
+			},
+			'fswa-settings',
+			'fswa_spam'
+		);
 	}
 
 	// -------------------------------------------------------------------------
 	// Helpers
 	// -------------------------------------------------------------------------
-
-	/**
-	 * Return true if the cf-turnstile script is already provided by another
-	 * plugin on the frontend.
-	 *
-	 * Detection runs via FSWA_MyAccount::detect_external_turnstile() on
-	 * wp_enqueue_scripts (priority 999) and is cached as a transient so this
-	 * admin-context method can read it without needing frontend script access.
-	 * Falls back to false until the first frontend page has been loaded.
-	 */
-	private static function has_turnstile_plugin(): bool {
-		return '1' === get_transient( 'fswa_external_turnstile' );
-	}
 
 	private static function register_field(
 		string  $option,

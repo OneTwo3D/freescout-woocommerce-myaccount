@@ -282,6 +282,9 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 
 ## Changelog
 
+### 1.1.55
+- **Improvement:** Replaced automatic Turnstile detection with a simple **Enable Turnstile** checkbox in the Spam Protection settings section. Enable it to load the Turnstile script and show the widget; disable it when another plugin already handles Turnstile site-wide. Removes the per-request transient write introduced in 1.1.54.
+
 ### 1.1.54
 - **Improvement:** Turnstile detection is now plugin-independent. `FSWA_MyAccount` hooks into `wp_enqueue_scripts` at priority 999 and checks whether the `cf-turnstile` script handle is already registered by any plugin, caching the result as a one-hour transient. The admin settings page reads that transient to decide whether to show the Spam Protection section. The `[fswa_new_ticket_form]` shortcode uses the same `wp_script_is` check at render time and only enqueues the Turnstile script itself when no other plugin has registered it.
 - **Removed:** hardcoded plugin-slug and constant detection in favour of the runtime script check above.

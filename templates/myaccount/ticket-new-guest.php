@@ -116,7 +116,7 @@ $is_guest         = ! is_user_logged_in();
 			</button>
 			<?php
 			$turnstile_site_key = get_option( 'fswa_turnstile_site_key', '' );
-			if ( $turnstile_site_key ) :
+			if ( get_option( 'fswa_turnstile_enabled', 0 ) && $turnstile_site_key ) :
 			?>
 			<div class="cf-turnstile" data-sitekey="<?php echo esc_attr( $turnstile_site_key ); ?>"></div>
 			<?php endif; ?>
