@@ -234,75 +234,86 @@ class FSWA_Admin {
 			'fswa_kb'
 		);
 
-		register_setting( 'fswa-settings', 'fswa_kb_category_hierarchy', [
-			'type'              => 'string',
-			'sanitize_callback' => 'sanitize_textarea_field',
-		] );
-		add_settings_field(
-			'fswa_kb_category_hierarchy',
-			__( 'Category Hierarchy', 'fswa' ),
-			function () {
-				$value = get_option( 'fswa_kb_category_hierarchy', '' );
-				echo '<textarea id="fswa_kb_category_hierarchy" name="fswa_kb_category_hierarchy" rows="5" class="large-text code" placeholder="1:2,3,9&#10;8:10,11">'
-					. esc_textarea( $value )
-					. '</textarea>';
-				echo '<p class="description">'
-					. esc_html__( 'Only needed if your FreeScout KB module does not return parent/child information. Updated versions of the EcomGraduates module include native hierarchy support and this field can be left blank. For older modules, define the hierarchy here — one parent per line:', 'fswa' )
-					. ' <code>parent_id:child_id,child_id,...</code><br>'
-					. esc_html__( 'Example — category 1 is a parent of 2, 3 and 9:', 'fswa' )
-					. ' <code>1:2,3,9</code>'
-					. '</p>';
-			},
-			'fswa-settings',
-			'fswa_kb'
-		);
-
 		// ------------------------------------------------------------------ //
 		// Section: Spam Protection
+		// Only shown when no other Turnstile plugin is active — if one is,
+		// it already provides the Turnstile script and its own key management.
 		// ------------------------------------------------------------------ //
-		add_settings_section(
-			'fswa_spam',
-			__( 'Spam Protection', 'fswa' ),
-			function () {
-				echo '<p>' . wp_kses(
-					__( 'Add a <a href="https://www.cloudflare.com/products/turnstile/" target="_blank" rel="noopener">Cloudflare Turnstile</a> captcha to the public ticket submission form. Leave blank to disable. Obtain your keys from the Cloudflare dashboard.', 'fswa' ),
-					[ 'a' => [ 'href' => [], 'target' => [], 'rel' => [] ] ]
-				) . '</p>';
-			},
-			'fswa-settings'
-		);
+		if ( ! self::has_turnstile_plugin() ) {
+			add_settings_section(
+				'fswa_spam',
+				__( 'Spam Protection', 'fswa' ),
+				function () {
+					echo '<p>' . wp_kses(
+						__( 'Add a <a href="https://www.cloudflare.com/products/turnstile/" target="_blank" rel="noopener">Cloudflare Turnstile</a> captcha to the public ticket submission form. Leave blank to disable. Obtain your keys from the Cloudflare dashboard.', 'fswa' ),
+						[ 'a' => [ 'href' => [], 'target' => [], 'rel' => [] ] ]
+					) . '</p>';
+				},
+				'fswa-settings'
+			);
 
-		self::register_field(
-			'fswa_turnstile_site_key',
-			__( 'Turnstile Site Key', 'fswa' ),
-			'fswa_spam',
-			'text',
-			'',
-			'sanitize_text_field',
-			__( 'Shown to visitors — safe to expose publicly.', 'fswa' )
-		);
+			self::register_field(
+				'fswa_turnstile_site_key',
+				__( 'Turnstile Site Key', 'fswa' ),
+				'fswa_spam',
+				'text',
+				'',
+				'sanitize_text_field',
+				__( 'Shown to visitors — safe to expose publicly.', 'fswa' )
+			);
 
-		// Secret key uses password input so it is masked in the admin.
-		register_setting( 'fswa-settings', 'fswa_turnstile_secret_key', [
-			'type'              => 'string',
-			'sanitize_callback' => 'sanitize_text_field',
-		] );
-		add_settings_field(
-			'fswa_turnstile_secret_key',
-			__( 'Turnstile Secret Key', 'fswa' ),
-			function () {
-				$value = get_option( 'fswa_turnstile_secret_key', '' );
-				echo '<input type="password" id="fswa_turnstile_secret_key" name="fswa_turnstile_secret_key" value="' . esc_attr( $value ) . '" class="regular-text" autocomplete="off">';
-				echo '<p class="description">' . esc_html__( 'Keep this secret — never expose it publicly.', 'fswa' ) . '</p>';
-			},
-			'fswa-settings',
-			'fswa_spam'
-		);
+			// Secret key uses password input so it is masked in the admin.
+			register_setting( 'fswa-settings', 'fswa_turnstile_secret_key', [
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+			] );
+			add_settings_field(
+				'fswa_turnstile_secret_key',
+				__( 'Turnstile Secret Key', 'fswa' ),
+				function () {
+					$value = get_option( 'fswa_turnstile_secret_key', '' );
+					echo '<input type="password" id="fswa_turnstile_secret_key" name="fswa_turnstile_secret_key" value="' . esc_attr( $value ) . '" class="regular-text" autocomplete="off">';
+					echo '<p class="description">' . esc_html__( 'Keep this secret — never expose it publicly.', 'fswa' ) . '</p>';
+				},
+				'fswa-settings',
+				'fswa_spam'
+			);
+		}
 	}
 
 	// -------------------------------------------------------------------------
 	// Helpers
 	// -------------------------------------------------------------------------
+
+	/**
+	 * Return true if a Cloudflare Turnstile plugin is already active.
+	 *
+	 * Checks for the most common standalone Turnstile plugins by their
+	 * well-known constants and plugin-file slugs. When one is found, the
+	 * plugin's own Spam Protection settings section is hidden to avoid
+	 * duplicating key management.
+	 */
+	private static function has_turnstile_plugin(): bool {
+		// "Simple Cloudflare Turnstile" (most popular — 100k+ installs).
+		if ( defined( 'SIMPLE_CLOUDFLARE_TURNSTILE_VERSION' ) ) {
+			return true;
+		}
+
+		// Generic: scan the active-plugins list for known Turnstile slugs.
+		$active = (array) get_option( 'active_plugins', [] );
+		$slugs  = [
+			'simple-cloudflare-turnstile/simple-cloudflare-turnstile.php',
+			'cloudflare-turnstile/cloudflare-turnstile.php',
+			'cf-turnstile/cf-turnstile.php',
+		];
+		foreach ( $slugs as $slug ) {
+			if ( in_array( $slug, $active, true ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
 
 	private static function register_field(
 		string  $option,

@@ -282,6 +282,10 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 
 ## Changelog
 
+### 1.1.52
+- **Improvement:** The **Spam Protection** settings section (Turnstile Site Key / Secret Key) is now hidden when a standalone Cloudflare Turnstile plugin is already active (detected via known constants and plugin slugs). This avoids duplicate key management when Turnstile is already handled site-wide.
+- **Removed:** **Category Hierarchy** admin setting. Native parent/child hierarchy support in current KB module versions makes this manual mapping unnecessary.
+
 ### 1.1.51
 - **Fix:** Removed the plugin's own `wp_enqueue_script` call for the Cloudflare Turnstile script. The `<div class="cf-turnstile">` widget is still rendered; Turnstile's globally-loaded script picks it up automatically, eliminating the duplicate script load.
 
