@@ -110,18 +110,17 @@ $is_guest         = ! is_user_logged_in();
 			<p class="fswa-form-field__help"><?php esc_html_e( 'Optional. PDF, images (JPG, PNG, GIF, WebP), or TXT — max 10 MB per file, up to 5 files.', 'fswa' ); ?></p>
 		</div>
 
-		<?php
-		$turnstile_site_key = get_option( 'fswa_turnstile_site_key', '' );
-		if ( $turnstile_site_key ) :
-		?>
-		<div class="fswa-form-field fswa-captcha-field">
+		<div class="fswa-form-footer">
+			<button type="submit" class="button fswa-btn fswa-btn-submit" id="fswa-new-ticket-submit">
+				<?php esc_html_e( 'Submit Ticket', 'fswa' ); ?>
+			</button>
+			<?php
+			$turnstile_site_key = get_option( 'fswa_turnstile_site_key', '' );
+			if ( get_option( 'fswa_turnstile_enabled', 0 ) && $turnstile_site_key ) :
+			?>
 			<div class="cf-turnstile" data-sitekey="<?php echo esc_attr( $turnstile_site_key ); ?>"></div>
+			<?php endif; ?>
 		</div>
-		<?php endif; ?>
-
-		<button type="submit" class="button fswa-btn fswa-btn-submit" id="fswa-new-ticket-submit">
-			<?php esc_html_e( 'Submit Ticket', 'fswa' ); ?>
-		</button>
 	</form>
 
 </div>

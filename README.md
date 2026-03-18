@@ -282,6 +282,32 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 
 ## Changelog
 
+### 1.1.57
+- **Fix:** The "Still need help? Open a ticket" button on KB article pages is now hidden when `[fswa_new_ticket_form]` is also present on the same page. This prevents the button from redirecting to the login-required My Account form when the guest-friendly form is already visible on the page.
+
+### 1.1.56
+- **Removed:** Knowledge Base API Debugger section from the admin settings page (UI and dead `run_kb_debug()` method).
+
+### 1.1.55
+- **Improvement:** Replaced automatic Turnstile detection with a simple **Enable Turnstile** checkbox in the Spam Protection settings section. Enable it to load the Turnstile script and show the widget; disable it when another plugin already handles Turnstile site-wide. Removes the per-request transient write introduced in 1.1.54.
+
+### 1.1.54
+- **Improvement:** Turnstile detection is now plugin-independent. `FSWA_MyAccount` hooks into `wp_enqueue_scripts` at priority 999 and checks whether the `cf-turnstile` script handle is already registered by any plugin, caching the result as a one-hour transient. The admin settings page reads that transient to decide whether to show the Spam Protection section. The `[fswa_new_ticket_form]` shortcode uses the same `wp_script_is` check at render time and only enqueues the Turnstile script itself when no other plugin has registered it.
+- **Removed:** hardcoded plugin-slug and constant detection in favour of the runtime script check above.
+
+### 1.1.53
+- **Improvement:** Turnstile plugin detection now also recognises the XootiX Easy Login — Security addon (`easy-login-addon-security`). Because the addon is a private paid plugin with no public main-file slug, detection uses a folder-prefix match.
+
+### 1.1.52
+- **Improvement:** The **Spam Protection** settings section (Turnstile Site Key / Secret Key) is now hidden when a standalone Cloudflare Turnstile plugin is already active (detected via known constants and plugin slugs). This avoids duplicate key management when Turnstile is already handled site-wide.
+- **Removed:** **Category Hierarchy** admin setting. Native parent/child hierarchy support in current KB module versions makes this manual mapping unnecessary.
+
+### 1.1.51
+- **Fix:** Removed the plugin's own `wp_enqueue_script` call for the Cloudflare Turnstile script. The `<div class="cf-turnstile">` widget is still rendered; Turnstile's globally-loaded script picks it up automatically, eliminating the duplicate script load.
+
+### 1.1.50
+- **Style:** Cloudflare Turnstile widget on the `[fswa_new_ticket_form]` is now positioned at the bottom-right of the form, inline with the Submit button via a flex row. On narrow screens (< 480 px) it stacks below the button.
+
 ### 1.1.49
 - **Fix:** Ticket detail view now correctly loads the conversation thread. The plugin was calling a non-existent `GET /api/conversations/{id}/threads` endpoint; threads are already embedded in the single-conversation response by default (`?embed=threads`). Switching to use that embedded data eliminates the extra API call and fixes the "No messages yet." false-empty state.
 

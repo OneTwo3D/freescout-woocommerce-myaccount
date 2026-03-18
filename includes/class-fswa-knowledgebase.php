@@ -711,6 +711,16 @@ class FSWA_KnowledgeBase {
 		return wc_get_account_endpoint_url( FSWA_MyAccount::ENDPOINT ) . 'new/';
 	}
 
+	/**
+	 * Returns true when the current page/post already contains a
+	 * [fswa_new_ticket_form] shortcode, so the article footer button can be
+	 * hidden (the user can scroll to the form instead).
+	 */
+	public static function has_ticket_form_on_page(): bool {
+		global $post;
+		return $post && has_shortcode( $post->post_content, 'fswa_new_ticket_form' );
+	}
+
 	// -------------------------------------------------------------------------
 	// Shortcode dispatcher
 	// -------------------------------------------------------------------------

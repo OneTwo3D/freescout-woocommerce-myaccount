@@ -94,9 +94,9 @@ class FSWA_Ajax {
 		}
 
 		// ------------------------------------------------------------------ //
-		// Turnstile captcha – only enforced for guests when a secret key is set.
+		// Turnstile captcha – only enforced for guests when enabled and a secret key is set.
 		// ------------------------------------------------------------------ //
-		if ( ! is_user_logged_in() ) {
+		if ( ! is_user_logged_in() && get_option( 'fswa_turnstile_enabled', 0 ) ) {
 			$ts_secret = get_option( 'fswa_turnstile_secret_key', '' );
 			if ( '' !== $ts_secret ) {
 				$ts_token = sanitize_text_field( wp_unslash( $_POST['cf-turnstile-response'] ?? '' ) );

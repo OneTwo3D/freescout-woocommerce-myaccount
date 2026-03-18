@@ -119,13 +119,14 @@ class FSWA_Shortcodes {
 		// Enqueue frontend assets (safe to call here – runs before wp_footer).
 		self::enqueue_assets();
 
-		// Enqueue Cloudflare Turnstile when a site key is configured.
-		if ( get_option( 'fswa_turnstile_site_key', '' ) ) {
+		// Enqueue the Turnstile script when Turnstile is enabled and not
+		// already provided by another plugin.
+		if ( get_option( 'fswa_turnstile_enabled', 0 ) && ! wp_script_is( 'cf-turnstile', 'registered' ) ) {
 			wp_enqueue_script(
 				'cf-turnstile',
 				'https://challenges.cloudflare.com/turnstile/v0/api.js',
 				[],
-				null, // Cloudflare manages its own versioning
+				null, // Cloudflare manages versioning
 				true
 			);
 		}
