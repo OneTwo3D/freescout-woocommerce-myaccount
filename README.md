@@ -282,6 +282,9 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 
 ## Changelog
 
+### 1.1.50
+- **Style:** Cloudflare Turnstile widget on the `[fswa_new_ticket_form]` is now positioned at the bottom-right of the form, inline with the Submit button via a flex row. On narrow screens (< 480 px) it stacks below the button.
+
 ### 1.1.49
 - **Fix:** Ticket detail view now correctly loads the conversation thread. The plugin was calling a non-existent `GET /api/conversations/{id}/threads` endpoint; threads are already embedded in the single-conversation response by default (`?embed=threads`). Switching to use that embedded data eliminates the extra API call and fixes the "No messages yet." false-empty state.
 
