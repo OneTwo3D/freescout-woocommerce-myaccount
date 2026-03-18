@@ -50,7 +50,7 @@ $show_search = (bool) get_option( 'fswa_kb_show_search', 1 );
 				$cat_id    = (int) ( $cat['id'] ?? 0 );
 				$cat_name  = esc_html( $cat['name'] ?? '' );
 				$cat_desc  = esc_html( $cat['text'] ?? $cat['description'] ?? '' );
-				$art_count = (int) ( $cat['articlesCount'] ?? 0 );
+				$art_count = (int) ( $cat['articlesCount'] ?? $cat['article_count'] ?? 0 );
 				$cat_url   = FSWA_KnowledgeBase::category_url( $cat_id );
 			?>
 			<a href="<?php echo esc_url( $cat_url ); ?>" class="fswa-kb-category-card">

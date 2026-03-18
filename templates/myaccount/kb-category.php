@@ -41,7 +41,7 @@ $cat_desc = $category['text'] ?? $category['description'] ?? '';
 				$sub_id    = (int) ( $sub['id'] ?? 0 );
 				$sub_name  = esc_html( $sub['name'] ?? '' );
 				$sub_desc  = esc_html( $sub['text'] ?? $sub['description'] ?? '' );
-				$art_count = (int) ( $sub['articlesCount'] ?? 0 );
+				$art_count = (int) ( $sub['articlesCount'] ?? $sub['article_count'] ?? 0 );
 				$sub_url   = FSWA_KnowledgeBase::category_url( $sub_id );
 			?>
 			<a href="<?php echo esc_url( $sub_url ); ?>" class="fswa-kb-category-card">
