@@ -65,7 +65,6 @@ Use the **Test API Connection** button to confirm the credentials are valid. A s
 | **KB Menu Label** | `Knowledge Base` | Text shown in the My Account navigation menu for the KB tab. |
 | **Articles Per Page** | `15` | Number of articles shown per page in category and search views (1–50). |
 | **Search Bar** | Enabled | Displays a search bar at the top of the KB home page with live autocomplete. |
-| **Category Hierarchy** | — | Only needed for older KB modules that return a flat category list with no parent/child information. Updated versions of the EcomGraduates module include native hierarchy support — leave blank if your module version does. For older modules, define the hierarchy here, one parent per line: `parent_id:child_id,child_id,...`. Example: `1:2,3,9` makes categories 2, 3 and 9 appear as subcategories of category 1. |
 
 ---
 
@@ -93,7 +92,7 @@ Install one of the above modules in FreeScout, then set the **KB Mailbox ID** in
 
 - **Home** — a card grid of all KB categories, each showing its name, description, and article count.
 - **Category** — a list of articles within a selected category.
-- **Article** — the full article body with breadcrumb navigation back to the category. A "Still need help? Open a ticket" link is shown when new tickets are enabled.
+- **Article** — the full article body with breadcrumb navigation back to the category. A "Still need help? Open a ticket" link is shown when new tickets are enabled, **unless** `[fswa_new_ticket_form]` is already present on the same page (in which case the button is hidden and visitors can scroll to the form directly).
 - **Search** — a keyword search across all articles, with a live-autocomplete dropdown that fires as the customer types (results appear after 2 characters, keyboard-navigable).
 
 The KB tab is independent of the ticket feature and can be enabled/disabled separately. If the KB module is not installed or the mailbox ID is not configured, the tab shows a friendly message.
@@ -184,13 +183,18 @@ Navigation stays on the same page using `?fswa_kb=` query parameters, so no extr
 
 | Attribute | Default | Description |
 |---|---|---|
-| `ticket_url` | My Account new-ticket URL | URL for the "Still need help? Open a ticket" button on article pages. Set this to a page that contains `[fswa_new_ticket_form]` so guests can submit without being redirected to login. |
+| `ticket_url` | My Account new-ticket URL | URL for the "Still need help? Open a ticket" button on article pages. Set this when `[fswa_new_ticket_form]` is on a **different** page so guests can submit without being redirected to the login-required My Account. |
+
+> **Same-page shortcodes:** When `[fswa_kb]` and `[fswa_new_ticket_form]` are on the **same** page, the "Still need help?" button is hidden automatically — there is no need to set `ticket_url` and no risk of sending visitors to the login page.
 
 **Examples:**
 
 ```
+<!-- KB and ticket form on the same page — button hidden automatically -->
 [fswa_kb]
+[fswa_new_ticket_form]
 
+<!-- KB alone — button links to a separate guest-friendly form page -->
 [fswa_kb ticket_url="/contact/support/"]
 ```
 
@@ -283,7 +287,7 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 ## Changelog
 
 ### 1.1.57
-- **Fix:** The "Still need help? Open a ticket" button on KB article pages is now hidden when `[fswa_new_ticket_form]` is also present on the same page. This prevents the button from redirecting to the login-required My Account form when the guest-friendly form is already visible on the page.
+- **Fix:** The "Still need help? Open a ticket" button on KB article pages is now automatically hidden when `[fswa_new_ticket_form]` is present on the same page. Previously the button always linked to the login-required My Account new-ticket URL, even when a guest-friendly form was already on the page. The `ticket_url` attribute on `[fswa_kb]` continues to work as before for setups where the two shortcodes are on separate pages.
 
 ### 1.1.56
 - **Removed:** Knowledge Base API Debugger section from the admin settings page (UI and dead `run_kb_debug()` method).
