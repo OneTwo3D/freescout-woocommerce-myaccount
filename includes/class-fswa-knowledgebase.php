@@ -189,6 +189,8 @@ class FSWA_KnowledgeBase {
 
 		// If subcategories weren't embedded (older module versions) or category
 		// metadata is still missing, fetch the full categories list and resolve both.
+		$cats_result  = null;
+		$all_cats     = [];
 		if ( empty( $subcategories ) || null === $category ) {
 			$cats_result = $api->get_kb_categories( $mailbox_id );
 			if ( ! is_wp_error( $cats_result ) ) {
@@ -211,6 +213,21 @@ class FSWA_KnowledgeBase {
 					}
 				}
 			}
+		}
+
+		// Admin-only debug panel: helps diagnose why subcategories are not showing.
+		if ( empty( $subcategories ) && current_user_can( 'manage_woocommerce' ) ) {
+			echo '<details style="margin:8px 0;font-size:12px;border:1px dashed #ccc;padding:6px;">'
+				. '<summary style="cursor:pointer;color:#666;">⚙ FSWA debug — category API response (visible to admins only)</summary>'
+				. '<p style="margin:4px 0;color:#666;">Category endpoint response:</p>'
+				. '<pre style="overflow:auto;max-height:300px;background:#f6f8fa;padding:6px;">'
+				. esc_html( wp_json_encode( $result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE ) )
+				. '</pre>'
+				. '<p style="margin:4px 0;color:#666;">All-categories endpoint (first 3 items shown, check for parent_id/parentId field):</p>'
+				. '<pre style="overflow:auto;max-height:300px;background:#f6f8fa;padding:6px;">'
+				. esc_html( wp_json_encode( array_slice( $all_cats, 0, 3 ), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE ) )
+				. '</pre>'
+				. '</details>';
 		}
 
 		// The KB module API does not paginate category articles.
