@@ -121,8 +121,8 @@ class FSWA_API {
 	 */
 	public function post_reply( int $conversation_id, string $body, string $customer_email ) {
 		$payload = [
-			'type'   => 'customer',
-			'body'   => wp_kses_post( $body ),
+			'type'     => 'customer',
+			'text'     => wp_kses_post( $body ),
 			'customer' => [
 				'email' => $customer_email,
 			],
@@ -155,10 +155,11 @@ class FSWA_API {
 		string $customer_last_name  = '',
 		array  $attachments         = []
 	) {
-		// Thread customer is omitted — FreeScout infers it from the conversation customer.
+		// Thread customer is required so FreeScout can set thread.customer_id.
 		$thread = [
-			'type' => 'customer',
-			'body' => $body,
+			'type'     => 'customer',
+			'text'     => $body,
+			'customer' => [ 'email' => $customer_email ],
 		];
 
 		if ( ! empty( $attachments ) ) {
