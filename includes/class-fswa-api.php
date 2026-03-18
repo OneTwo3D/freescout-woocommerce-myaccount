@@ -143,17 +143,6 @@ class FSWA_API {
 	 * @param  string $customer_email
 	 * @param  string $customer_first_name
 	 * @param  string $customer_last_name
-	 * @return array|WP_Error
-	 */
-	/**
-	 * Create a new conversation (ticket) on behalf of a customer.
-	 *
-	 * @param  int    $mailbox_id
-	 * @param  string $subject
-	 * @param  string $body
-	 * @param  string $customer_email
-	 * @param  string $customer_first_name
-	 * @param  string $customer_last_name
 	 * @param  array  $attachments  Optional. Each entry: ['fileName'=>'...','mimeType'=>'...','data'=>'<base64>'].
 	 * @return array|WP_Error
 	 */
@@ -168,7 +157,7 @@ class FSWA_API {
 	) {
 		$thread = [
 			'type'     => 'customer',
-			'body'     => wp_kses_post( $body ),
+			'body'     => $body,
 			'customer' => [ 'email' => $customer_email ],
 		];
 
@@ -176,15 +165,22 @@ class FSWA_API {
 			$thread['attachments'] = $attachments;
 		}
 
+		// Build customer object — omit name fields when empty so FreeScout
+		// does not receive empty strings it may treat as invalid.
+		$customer = [ 'email' => $customer_email ];
+		if ( '' !== $customer_first_name ) {
+			$customer['firstName'] = $customer_first_name;
+		}
+		if ( '' !== $customer_last_name ) {
+			$customer['lastName'] = $customer_last_name;
+		}
+
 		$payload = [
 			'type'      => 'email',
 			'mailboxId' => $mailbox_id,
 			'subject'   => sanitize_text_field( $subject ),
-			'customer'  => [
-				'email'     => $customer_email,
-				'firstName' => $customer_first_name,
-				'lastName'  => $customer_last_name,
-			],
+			'status'    => 'pending',
+			'customer'  => $customer,
 			'threads'   => [ $thread ],
 		];
 
