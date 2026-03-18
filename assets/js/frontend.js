@@ -58,8 +58,10 @@
 			} else {
 				$err.text( ( response.data && response.data.message ) || fswa.i18n.replyError ).show();
 			}
-		} ).fail( function () {
-			$err.text( fswa.i18n.replyError ).show();
+		} ).fail( function ( jqXHR ) {
+			var msg = ( jqXHR.responseJSON && jqXHR.responseJSON.data && jqXHR.responseJSON.data.message )
+				|| fswa.i18n.replyError;
+			$err.text( msg ).show();
 		} ).always( function () {
 			$submit.prop( 'disabled', false ).text( fswa.i18n.send );
 		} );
@@ -102,10 +104,11 @@
 	$( document ).on( 'submit', '#fswa-new-ticket-form', function ( e ) {
 		e.preventDefault();
 
-		var $form   = $( this );
-		var $submit = $( '#fswa-new-ticket-submit' );
-		var $ok     = $( '#fswa-new-ticket-success' );
-		var $err    = $( '#fswa-new-ticket-error' );
+		var $form       = $( this );
+		var $submit     = $( '#fswa-new-ticket-submit' );
+		var $ok         = $( '#fswa-new-ticket-success' );
+		var $err        = $( '#fswa-new-ticket-error' );
+		var submitText  = $submit.text(); // preserve original label for restoration
 
 		$ok.hide();
 		$err.hide();
@@ -134,11 +137,13 @@
 				}
 			} else {
 				$err.text( ( response.data && response.data.message ) || fswa.i18n.replyError ).show();
-				$submit.prop( 'disabled', false ).text( fswa.i18n.send );
+				$submit.prop( 'disabled', false ).text( submitText );
 			}
-		} ).fail( function () {
-			$err.text( fswa.i18n.replyError ).show();
-			$submit.prop( 'disabled', false ).text( fswa.i18n.send );
+		} ).fail( function ( jqXHR ) {
+			var msg = ( jqXHR.responseJSON && jqXHR.responseJSON.data && jqXHR.responseJSON.data.message )
+				|| fswa.i18n.replyError;
+			$err.text( msg ).show();
+			$submit.prop( 'disabled', false ).text( submitText );
 		} );
 	} );
 
