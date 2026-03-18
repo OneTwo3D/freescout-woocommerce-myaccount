@@ -301,14 +301,29 @@ class FSWA_Admin {
 
 		// Generic: scan the active-plugins list for known Turnstile slugs.
 		$active = (array) get_option( 'active_plugins', [] );
-		$slugs  = [
+
+		// Exact-match slugs for public plugins (folder/main-file.php known).
+		$exact = [
 			'simple-cloudflare-turnstile/simple-cloudflare-turnstile.php',
 			'cloudflare-turnstile/cloudflare-turnstile.php',
 			'cf-turnstile/cf-turnstile.php',
 		];
-		foreach ( $slugs as $slug ) {
+		foreach ( $exact as $slug ) {
 			if ( in_array( $slug, $active, true ) ) {
 				return true;
+			}
+		}
+
+		// Prefix-match for private/paid plugins where the main filename is
+		// not publicly known (match on folder name only).
+		$prefixes = [
+			'easy-login-addon-security/', // XootiX Easy Login — Security addon (Turnstile/reCAPTCHA)
+		];
+		foreach ( $prefixes as $prefix ) {
+			foreach ( $active as $plugin ) {
+				if ( strpos( $plugin, $prefix ) === 0 ) {
+					return true;
+				}
 			}
 		}
 

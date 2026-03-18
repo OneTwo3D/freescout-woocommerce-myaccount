@@ -282,6 +282,9 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 
 ## Changelog
 
+### 1.1.53
+- **Improvement:** Turnstile plugin detection now also recognises the XootiX Easy Login — Security addon (`easy-login-addon-security`). Because the addon is a private paid plugin with no public main-file slug, detection uses a folder-prefix match.
+
 ### 1.1.52
 - **Improvement:** The **Spam Protection** settings section (Turnstile Site Key / Secret Key) is now hidden when a standalone Cloudflare Turnstile plugin is already active (detected via known constants and plugin slugs). This avoids duplicate key management when Turnstile is already handled site-wide.
 - **Removed:** **Category Hierarchy** admin setting. Native parent/child hierarchy support in current KB module versions makes this manual mapping unnecessary.
