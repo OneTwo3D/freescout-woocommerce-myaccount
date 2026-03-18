@@ -282,6 +282,22 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 
 ## Changelog
 
+### 1.1.48
+- **Fix:** Thread content field corrected from `body` to `text` in both `post_reply()` and `create_conversation()`. FreeScout's REST API requires the `text` key for thread content; the previous `body` key was silently ignored, causing every new conversation and reply to be created with an empty message body and FreeScout to return HTTP 400.
+
+### 1.1.47
+- **Fix:** New ticket form submit button now restores its original label (e.g. "Submit Ticket") on error instead of always showing "Send Reply".
+- **Fix:** AJAX `.fail()` handlers for both the reply form and new-ticket form now surface the actual server-side error message from `response.data.message` rather than a generic fallback. Previously, because `wp_send_json_error()` sets a non-2xx HTTP status, jQuery always routed errors to `.fail()` where the message was discarded.
+
+### 1.1.46
+- **Improvement:** API error messages now include the HTTP status code (e.g. "FreeScout API error (HTTP 400): …") to aid debugging.
+
+### 1.1.45
+- **Fix:** `create_conversation()` no longer sends empty `firstName` / `lastName` strings in the customer object. FreeScout treats empty string name fields as invalid; name keys are now omitted entirely when the values are blank.
+
+### 1.1.41
+- **Fix:** KB category cards now show the correct article count for modules that return `article_count` (snake_case) instead of `articlesCount` (camelCase). Both field names are checked.
+
 ### 1.1.40
 - **Fix:** Raw SQL/server error messages from FreeScout are no longer shown to regular users. A 500 response (e.g. from a missing DB column after a module update without running its migration) now shows a generic "temporarily unavailable" message to customers, with the actual error detail and a migration hint shown only to admins (`manage_woocommerce`). All other unexpected API errors are similarly gated.
 
