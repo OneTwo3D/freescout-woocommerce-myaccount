@@ -155,10 +155,10 @@ class FSWA_API {
 		string $customer_last_name  = '',
 		array  $attachments         = []
 	) {
+		// Thread customer is omitted — FreeScout infers it from the conversation customer.
 		$thread = [
-			'type'     => 'customer',
-			'body'     => $body,
-			'customer' => [ 'email' => $customer_email ],
+			'type' => 'customer',
+			'body' => $body,
 		];
 
 		if ( ! empty( $attachments ) ) {
@@ -179,7 +179,6 @@ class FSWA_API {
 			'type'      => 'email',
 			'mailboxId' => $mailbox_id,
 			'subject'   => sanitize_text_field( $subject ),
-			'status'    => 'pending',
 			'customer'  => $customer,
 			'threads'   => [ $thread ],
 		];
@@ -378,11 +377,12 @@ class FSWA_API {
 		$body   = wp_remote_retrieve_body( $response );
 
 		if ( ! in_array( $status, $valid_codes, true ) ) {
-			$message = $this->extract_error_message( $body ) ?: sprintf(
-				/* translators: %d HTTP status code */
-				__( 'FreeScout API returned HTTP %d.', 'fswa' ),
-				$status
-			);
+			$detail  = $this->extract_error_message( $body );
+			$message = $detail
+				/* translators: 1: HTTP status code  2: error detail from FreeScout */
+				? sprintf( __( 'FreeScout API error (HTTP %1$d): %2$s', 'fswa' ), $status, $detail )
+				/* translators: %d: HTTP status code */
+				: sprintf( __( 'FreeScout API returned HTTP %d.', 'fswa' ), $status );
 			return new WP_Error( 'fswa_api_error', $message, [ 'status' => $status ] );
 		}
 
