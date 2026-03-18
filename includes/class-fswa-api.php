@@ -98,17 +98,7 @@ class FSWA_API {
 	 * @return array|WP_Error
 	 */
 	public function get_conversation( int $conversation_id ) {
-		return $this->get( '/api/conversations/' . $conversation_id );
-	}
-
-	/**
-	 * Return threads (messages) for a conversation.
-	 *
-	 * @param  int $conversation_id
-	 * @return array|WP_Error
-	 */
-	public function get_threads( int $conversation_id ) {
-		return $this->get( '/api/conversations/' . $conversation_id . '/threads' );
+		return $this->get( '/api/conversations/' . $conversation_id, [ 'embed' => 'threads' ] );
 	}
 
 	/**

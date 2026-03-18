@@ -282,6 +282,9 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 
 ## Changelog
 
+### 1.1.49
+- **Fix:** Ticket detail view now correctly loads the conversation thread. The plugin was calling a non-existent `GET /api/conversations/{id}/threads` endpoint; threads are already embedded in the single-conversation response by default (`?embed=threads`). Switching to use that embedded data eliminates the extra API call and fixes the "No messages yet." false-empty state.
+
 ### 1.1.48
 - **Fix:** Thread content field corrected from `body` to `text` in both `post_reply()` and `create_conversation()`. FreeScout's REST API requires the `text` key for thread content; the previous `body` key was silently ignored, causing every new conversation and reply to be created with an empty message body and FreeScout to return HTTP 400.
 
