@@ -273,7 +273,7 @@ Yes, as long as the WordPress server can reach your FreeScout URL over HTTP/HTTP
 Not strictly, but strongly recommended. API keys are transmitted in request headers, so an unencrypted connection would expose them.
 
 **The Knowledge Base tab shows an unavailability message or "Method Not Allowed".**
-The KB feature requires a separate FreeScout Knowledge Base API module — the core FreeScout REST API does not include KB endpoints. Install either [jtorvald/freescout-knowledge-api](https://github.com/jtorvald/freescout-knowledge-api) or [EcomGraduates/KnowledgeBaseApiModule](https://github.com/EcomGraduates/KnowledgeBaseApiModule) on your FreeScout instance, then set the **KB Mailbox ID** under **WooCommerce → FreeScout → Knowledge Base**.
+The KB feature requires a separate FreeScout Knowledge Base API module — the core FreeScout REST API does not include KB endpoints. Install either [jtorvald/freescout-knowledge-api](https://github.com/jtorvald/freescout-knowledge-api), [EcomGraduates/KnowledgeBaseApiModule] (https://github.com/EcomGraduates/KnowledgeBaseApiModule) (supports nested categories) or [onetwo3D/KnowledgeBaseApiModule](https://github.com/OneTwo3D/KnowledgeBaseApiModule) (supports nested categories, plugin tested with this version) on your FreeScout instance, then set the **KB Mailbox ID** under **WooCommerce → FreeScout → Knowledge Base**.
 
 **The KB search autocomplete does not appear.**
 Autocomplete requires at least 2 characters. Also verify the **Search Bar** option is enabled in **WooCommerce → FreeScout → Knowledge Base** and that JavaScript is not blocked on your site.
