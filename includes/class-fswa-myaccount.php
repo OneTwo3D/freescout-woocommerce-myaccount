@@ -133,10 +133,8 @@ class FSWA_MyAccount {
 			return;
 		}
 
-		$threads_result = $api->get_threads( $conversation_id );
-		$threads        = ! is_wp_error( $threads_result )
-			? ( $threads_result['_embedded']['threads'] ?? [] )
-			: [];
+		// Threads are embedded in the conversation response by default (embed=threads).
+		$threads = $conversation['_embedded']['threads'] ?? [];
 
 		self::load_template( 'myaccount/ticket-detail.php', compact(
 			'conversation',
