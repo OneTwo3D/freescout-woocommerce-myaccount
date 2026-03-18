@@ -64,7 +64,7 @@ $updated  = ! empty( $article['updatedAt'] )
 			</a>
 		<?php endif; ?>
 
-		<?php if ( get_option( 'fswa_allow_new_tickets', 1 ) ) : ?>
+		<?php if ( get_option( 'fswa_allow_new_tickets', 1 ) && ! FSWA_KnowledgeBase::has_ticket_form_on_page() ) : ?>
 			<a href="<?php echo esc_url( FSWA_KnowledgeBase::ticket_url() ); ?>" class="button fswa-btn fswa-kb-article__contact-btn">
 				<?php esc_html_e( 'Still need help? Open a ticket', 'fswa' ); ?>
 			</a>

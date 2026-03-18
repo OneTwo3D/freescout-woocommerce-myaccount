@@ -282,6 +282,9 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 
 ## Changelog
 
+### 1.1.57
+- **Fix:** The "Still need help? Open a ticket" button on KB article pages is now hidden when `[fswa_new_ticket_form]` is also present on the same page. This prevents the button from redirecting to the login-required My Account form when the guest-friendly form is already visible on the page.
+
 ### 1.1.56
 - **Removed:** Knowledge Base API Debugger section from the admin settings page (UI and dead `run_kb_debug()` method).
 
