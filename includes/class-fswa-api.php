@@ -323,17 +323,16 @@ class FSWA_API {
 	}
 
 	/**
-	 * The knowledge-base locale for this request: the Polylang language of the page, or empty for the site's
-	 * default language (FreeScout answers in its own default, English, without one).
+	 * The knowledge-base locale for this request: the Polylang language of the page (empty without Polylang, when
+	 * FreeScout answers in its own default language).
 	 */
 	public static function kb_locale(): string {
 		$lang = self::$kb_locale_override;
 		if ( null === $lang && function_exists( 'pll_current_language' ) ) {
 			$lang = (string) pll_current_language( 'slug' );
 		}
-		$default = function_exists( 'pll_default_language' ) ? (string) pll_default_language( 'slug' ) : '';
-		$lang    = ( '' === (string) $lang || $lang === $default ) ? '' : (string) $lang;
-		$lang    = (string) apply_filters( 'fswa_kb_locale', $lang );
+		// Sent for every language, the site's default included: FreeScout's own default need not be the site's.
+		$lang = (string) apply_filters( 'fswa_kb_locale', (string) $lang );
 		return preg_match( '/^[a-z]{2}(?:[_-][A-Za-z]{2})?$/', $lang ) ? $lang : '';
 	}
 
