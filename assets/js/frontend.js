@@ -153,6 +153,7 @@
 	// -------------------------------------------------------------------------
 	var kbSearchTimer = null;
 	var kbActiveIndex = -1;
+	var kbSearchSeq   = 0;   // only the newest request may fill the list (replies can arrive out of order)
 
 	$( document ).on( 'input', '#fswa-kb-search-input', function () {
 		var $input       = $( this );
@@ -161,6 +162,7 @@
 
 		clearTimeout( kbSearchTimer );
 		kbActiveIndex = -1;
+		var seq = ++kbSearchSeq;   // also invalidates any reply still on its way when the input is cleared
 
 		if ( query.length < 2 ) {
 			hideSuggestions( $suggestions );
@@ -180,6 +182,9 @@
 					base   : fswa.kbBase || '',
 				},
 			} ).done( function ( response ) {
+				if ( seq !== kbSearchSeq || $.trim( $input.val() ) !== query ) {
+					return;   // a newer query has been typed since
+				}
 				if ( ! response.success || ! response.data.articles.length ) {
 					hideSuggestions( $suggestions );
 					return;
@@ -197,6 +202,9 @@
 				$suggestions.html( items ).removeAttr( 'hidden' );
 				$input.attr( 'aria-expanded', 'true' );
 			} ).fail( function () {
+				if ( seq !== kbSearchSeq ) {
+					return;
+				}
 				hideSuggestions( $suggestions );
 			} );
 		}, 280 );
