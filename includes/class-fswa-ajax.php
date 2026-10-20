@@ -273,6 +273,9 @@ class FSWA_Ajax {
 			wp_send_json_error( [ 'message' => __( 'Knowledge base is not available at the moment.', 'fswa' ) ], 503 );
 		}
 
+		// admin-ajax has no Polylang page language: the page sends its own (checked against the site's languages).
+		FSWA_API::set_kb_locale( sanitize_key( wp_unslash( $_POST['lang'] ?? '' ) ) );
+
 		$mailbox_id = FSWA_KnowledgeBase::get_mailbox_id();
 		$result     = $api->search_kb( $mailbox_id, $query );
 		if ( is_wp_error( $result ) ) {

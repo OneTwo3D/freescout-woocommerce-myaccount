@@ -184,6 +184,7 @@ class FSWA_MyAccount {
 		wp_localize_script( 'fswa-frontend', 'fswa', [
 			'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
 			'nonce'     => wp_create_nonce( 'fswa_nonce' ),
+			'lang'      => function_exists( 'pll_current_language' ) ? (string) pll_current_language( 'slug' ) : '',
 			'i18n'      => [
 				'sending'     => __( 'Sending…', 'fswa' ),
 				'send'        => __( 'Send Reply', 'fswa' ),
