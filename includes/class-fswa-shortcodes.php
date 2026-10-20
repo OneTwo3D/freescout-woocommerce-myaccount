@@ -236,6 +236,7 @@ class FSWA_Shortcodes {
 			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 			'nonce'   => wp_create_nonce( 'fswa_nonce' ),
 			'lang'    => function_exists( 'pll_current_language' ) ? (string) pll_current_language( 'slug' ) : '',
+			'kbBase'  => remove_query_arg( [ 'fswa_kb', 's' ], get_permalink() ?: home_url( '/' ) ),
 			'i18n'    => [
 				'sending'    => __( 'Sending…', 'fswa' ),
 				'send'       => __( 'Send Reply', 'fswa' ),

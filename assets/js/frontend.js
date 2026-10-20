@@ -177,6 +177,7 @@
 					nonce  : fswa.nonce,
 					query  : query,
 					lang   : fswa.lang || '',
+					base   : fswa.kbBase || '',
 				},
 			} ).done( function ( response ) {
 				if ( ! response.success || ! response.data.articles.length ) {
