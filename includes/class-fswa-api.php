@@ -333,7 +333,7 @@ class FSWA_API {
 		}
 		// Sent for every language, the site's default included: FreeScout's own default need not be the site's.
 		$lang = (string) apply_filters( 'fswa_kb_locale', (string) $lang );
-		return preg_match( '/^[a-z]{2}(?:[_-][A-Za-z]{2})?$/', $lang ) ? $lang : '';
+		return preg_match( '/^[a-z]{2,3}(?:[_-][A-Za-z0-9]{2,8})?$/', $lang ) ? $lang : '';
 	}
 
 	/**
