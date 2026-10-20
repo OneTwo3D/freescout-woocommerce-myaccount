@@ -276,6 +276,13 @@ class FSWA_Ajax {
 		// admin-ajax has no Polylang page language: the page sends its own (checked against the site's languages).
 		FSWA_API::set_kb_locale( sanitize_key( wp_unslash( $_POST['lang'] ?? '' ) ) );
 
+		// Suggestions on a page with the [fswa_kb] shortcode link to that page (the support page in the visitor's
+		// language), not to the My Account endpoint. Only an address on this site is accepted.
+		$base = esc_url_raw( wp_unslash( $_POST['base'] ?? '' ) );
+		if ( '' !== $base && wp_parse_url( $base, PHP_URL_HOST ) === wp_parse_url( home_url(), PHP_URL_HOST ) ) {
+			FSWA_KnowledgeBase::set_shortcode_base( $base );
+		}
+
 		$mailbox_id = FSWA_KnowledgeBase::get_mailbox_id();
 		$result     = $api->search_kb( $mailbox_id, $query );
 		if ( is_wp_error( $result ) ) {
@@ -287,7 +294,9 @@ class FSWA_Ajax {
 		if ( isset( $result['success'] ) && array_key_exists( 'data', $result ) ) {
 			$data = (array) $result['data'];
 		}
-		$raw = $data['articles'] ?? $data['docs'] ?? ( isset( $data[0] ) ? $data : [] );
+		// Same keys as the full results page (FSWA_KnowledgeBase::render_search): FreeScout's module answers with
+		// "results", so the suggestions list was always empty.
+		$raw = $data['articles'] ?? $data['docs'] ?? $data['results'] ?? $data['hits'] ?? $data['items'] ?? ( isset( $data[0] ) ? $data : [] );
 		$raw = array_slice( $raw, 0, 8 );
 
 		$articles = [];
@@ -297,7 +306,7 @@ class FSWA_Ajax {
 			$title  = sanitize_text_field( $article['name'] ?? $article['title'] ?? '' );
 			// categoryId may be a top-level integer or nested as category.id
 			$cat_id = (int) ( $article['categoryId'] ?? $article['category_id']
-				?? ( $article['category']['id'] ?? 0 ) );
+				?? ( $article['category']['id'] ?? ( $article['categories'][0]['id'] ?? 0 ) ) );
 			if ( $id && $title ) {
 				$articles[] = [
 					'id'    => $id,
