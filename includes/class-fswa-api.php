@@ -276,6 +276,13 @@ class FSWA_API {
 	 * @return array|WP_Error
 	 */
 	private function kb_get( string $endpoint, array $params = [] ) {
+		// THE VISITOR'S LANGUAGE. FreeScout's knowledge base holds translated categories and articles and answers
+		// in English unless asked (?locale=de|fr|es), so every language version of the site showed the same text.
+		$locale = self::kb_locale();
+		if ( '' !== $locale ) {
+			$params['locale'] = $locale;
+		}
+
 		$token = get_option( 'fswa_kb_api_token', '' );
 		if ( '' !== $token ) {
 			$params['token'] = $token;
@@ -300,6 +307,34 @@ class FSWA_API {
 
 		$response = wp_remote_get( $url, $args );
 		return $this->parse_response( $response );
+	}
+
+	/** Language set explicitly for this request (the KB live search sends the page's language over AJAX). */
+	private static $kb_locale_override = null;
+
+	/**
+	 * Use this language for knowledge-base requests in this request. Only a language the site has is accepted.
+	 */
+	public static function set_kb_locale( string $lang ): void {
+		$lang = strtolower( $lang );
+		if ( function_exists( 'pll_languages_list' ) && in_array( $lang, (array) pll_languages_list(), true ) ) {
+			self::$kb_locale_override = $lang;
+		}
+	}
+
+	/**
+	 * The knowledge-base locale for this request: the Polylang language of the page, or empty for the site's
+	 * default language (FreeScout answers in its own default, English, without one).
+	 */
+	public static function kb_locale(): string {
+		$lang = self::$kb_locale_override;
+		if ( null === $lang && function_exists( 'pll_current_language' ) ) {
+			$lang = (string) pll_current_language( 'slug' );
+		}
+		$default = function_exists( 'pll_default_language' ) ? (string) pll_default_language( 'slug' ) : '';
+		$lang    = ( '' === (string) $lang || $lang === $default ) ? '' : (string) $lang;
+		$lang    = (string) apply_filters( 'fswa_kb_locale', $lang );
+		return preg_match( '/^[a-z]{2}(?:[_-][A-Za-z]{2})?$/', $lang ) ? $lang : '';
 	}
 
 	/**
