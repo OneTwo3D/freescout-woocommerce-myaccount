@@ -69,6 +69,25 @@ Use the **Test API Connection** button to confirm the credentials are valid. A s
 
 ---
 
+## Chat customer identification (optional)
+
+For logged-in WooCommerce customers on pages carrying the FreeScout chat widget, the plugin signs a short-lived (1 hour) HS256 JWT with their identity and calls the FreeScout `/chat/identify` endpoint so the widget knows who they are. It is off unless these constants are defined in `wp-config.php`:
+
+| Constant | Description |
+|---|---|
+| `FREESCOUTAI_IDENTIFY_SECRET` | Shared HMAC secret from the FreeScout module settings. Keep it out of git. |
+| `FREESCOUTAI_FREESCOUT_URL` | FreeScout base URL |
+| `FREESCOUTAI_MAILBOX_ID` | Mailbox id |
+| `FREESCOUTAI_API_BASE` | Optional, default `/api/freescoutai` |
+
+The old `CLAUDEAI_IDENTIFY_SECRET`, `CLAUDEAI_FREESCOUT_URL` and `CLAUDEAI_MAILBOX_ID` names are accepted as aliases.
+
+**Migrating from the mu-plugin pair** (`freescoutai-identify-config.php` + `woocommerce-identify.php`): the plugin stays inactive while the legacy mu file is loaded (it checks for the function `freescoutai_output_identify_script()`), so the two can never run together. Order: (1) deploy the plugin, (2) add the constants to `wp-config.php`, (3) retire both mu files together. Until step 3 the mu-plugin keeps serving; after it, the plugin takes over on the next request.
+
+Tests: `php tests/chat-identify-test.php`.
+
+---
+
 ## Features
 
 ### Ticket list
@@ -281,6 +300,9 @@ Autocomplete requires at least 2 characters. Also verify the **Search Bar** opti
 ---
 
 ## Changelog
+
+### 1.1.61
+- **New:** Chat customer identification moved into the plugin (`includes/chat-identify.php`) from the `freescoutai-identify-config.php` / `woocommerce-identify.php` mu-plugin pair: same hooks, priorities, JWT payload and constant names. Loaded only when the `FREESCOUTAI_*` constants are defined, and inactive while the legacy mu-plugin is still loaded. See "Chat customer identification".
 
 ### 1.1.57
 - **Fix:** The "Still need help? Open a ticket" button on KB article pages is now hidden when `[fswa_new_ticket_form]` is also present on the same page. This prevents the button from redirecting to the login-required My Account form when the guest-friendly form is already visible on the page.
