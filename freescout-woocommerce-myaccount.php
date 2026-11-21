@@ -3,7 +3,7 @@
  * Plugin Name: FreeScout WooCommerce My Account
  * Plugin URI:  https://github.com/OneTwo3D/freescout-woocommerce-myaccount
  * Description: Allows WooCommerce customers to read and reply to FreeScout support tickets and browse the knowledge base from within the My Account section.
- * Version:     1.1.60
+ * Version:     1.1.61
  * Author:      OneTwo3D
  * License:     GPL-2.0-or-later
  * Text Domain: fswa
@@ -15,16 +15,42 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'FSWA_VERSION', '1.1.60' );
+define( 'FSWA_VERSION', '1.1.61' );
 define( 'FSWA_PLUGIN_FILE', __FILE__ );
 define( 'FSWA_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FSWA_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+
+/**
+ * Load the chat customer-identification port (includes/chat-identify.php), but
+ * only when the identify constants are defined (wp-config.php). The legacy
+ * CLAUDEAI_* names are accepted as aliases, as the old mu-plugin did. The
+ * include itself stays inactive while the legacy mu-plugin is still loaded.
+ */
+function fswa_chat_identify_maybe_load() {
+	foreach ( array( 'IDENTIFY_SECRET', 'FREESCOUT_URL', 'MAILBOX_ID' ) as $name ) {
+		if ( defined( 'CLAUDEAI_' . $name ) && ! defined( 'FREESCOUTAI_' . $name ) ) {
+			define( 'FREESCOUTAI_' . $name, constant( 'CLAUDEAI_' . $name ) );
+		}
+	}
+	if ( ! defined( 'FREESCOUTAI_API_BASE' ) ) {
+		define( 'FREESCOUTAI_API_BASE', '/api/freescoutai' );
+	}
+	if (
+		defined( 'FREESCOUTAI_IDENTIFY_SECRET' ) &&
+		defined( 'FREESCOUTAI_FREESCOUT_URL' ) &&
+		defined( 'FREESCOUTAI_MAILBOX_ID' )
+	) {
+		require_once FSWA_PLUGIN_DIR . 'includes/chat-identify.php';
+	}
+}
 
 /**
  * Main plugin bootstrap – loaded after all plugins are initialised.
  */
 add_action( 'plugins_loaded', 'fswa_init' );
 function fswa_init() {
+	fswa_chat_identify_maybe_load();
+
 	if ( ! class_exists( 'WooCommerce' ) ) {
 		add_action( 'admin_notices', function () {
 			echo '<div class="notice notice-error"><p>'
